@@ -16,14 +16,20 @@
 
 package de.metanome.algorithms;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
+import de.metanome.algorithm_helper.data_structures.ColumnCombinationBitset;
+import de.metanome.algorithm_helper.data_structures.PLIBuilder;
+import de.metanome.algorithm_helper.data_structures.PositionListIndex;
 import de.metanome.algorithm_integration.AlgorithmExecutionException;
-import de.metanome.algorithm_integration.input.InputGenerationException;
-import de.metanome.algorithm_integration.input.InputIterationException;
+import de.metanome.algorithm_integration.ColumnIdentifier;
 import de.metanome.algorithm_integration.input.RelationalInput;
 import de.metanome.algorithm_integration.input.RelationalInputGenerator;
 import de.metanome.algorithm_integration.result_receiver.UniqueColumnCombinationResultReceiver;
+import de.metanome.algorithm_integration.results.UniqueColumnCombination;
 
 public class MetanomnomnomAlgorithm {
 	
@@ -31,28 +37,65 @@ public class MetanomnomnomAlgorithm {
 	protected UniqueColumnCombinationResultReceiver resultReceiver = null;
 	
 	public void execute() throws AlgorithmExecutionException {
+		/*
+		 * Naive Algorithm
+		 * - read column names
+		 * - read all data rows, build complete position list index
+		 * - check column combinations until all UCCs are found
+		 */
+
+		// get input source
+		RelationalInput input = inputGenerator.generateNewCopy();
+		if (!input.hasNext()) {
+			// empty input => abort
+			return;
+		}
 		
-		//////////////////////////////////
-		// THE ALGORITHM LIVES HERE :-) //
-		//////////////////////////////////
+		// read table and column names
+		String tableName = input.relationName();
+		List<String> columnNames = input.next();
+		// assign numbers to columns, store their names accordingly
+		Map<Integer, String> columns = new TreeMap<Integer, String>();
+		for (int i = 0; i < columnNames.size(); i++) {
+			columns.put(i, columnNames.get(i));
+		}
+		printList("Columns", columnNames);
 		
-		// To test if the algorithm gets data
-		this.print();
-	}
-	
-	protected void print() throws InputGenerationException, InputIterationException {
-		RelationalInput input = this.inputGenerator.generateNewCopy();
+		// create Position List Index
+		PLIBuilder pliBuilder = new PLIBuilder(input);
+		List<PositionListIndex> pliList = pliBuilder.getPLIList();
 		
-		System.out.println(input.relationName());
-		
-		while (input.hasNext()) {
-			System.out.print("| ");
-			
-			List<String> record = input.next();
-			for (String value : record)
-				System.out.print(value + " | ");
-			
-			System.out.println();
+		// check column combinations
+		ColumnCombinationBitset topCC = new ColumnCombinationBitset(new ArrayList<Integer>(columns.keySet()));
+		List<ColumnCombinationBitset> allCCs = topCC.getAllSubsets();
+		for (int i = allCCs.size() - 2; i >= 0; i--) {	// go from bottom to top, skip empty column set
+			// get columns
+			List<Integer> columnList = allCCs.get(i).getSetBits();
+			printList("Checking CC", columnList);
+			// create intersection of the PLIs
+			PositionListIndex pli = null;
+			for (Integer columnIndex : columnList) {
+				pli = pli == null ? pliList.get(columnIndex) : pli.intersect(pliList.get(columnIndex));
+			}
+			// check uniqueness
+			if (pli.isUnique()) {
+				// report UCC
+				System.out.println("\tunique!");
+				List<ColumnIdentifier> identifiers = new ArrayList<ColumnIdentifier>(columnList.size());
+				for (Integer columnIndex : columnList) {
+					identifiers.add(new ColumnIdentifier(tableName, columns.get(columnIndex)));
+				}
+				this.resultReceiver.receiveResult(new UniqueColumnCombination(identifiers.toArray(new ColumnIdentifier[]{})));
+			}
 		}
 	}
+	
+	private void printList(String comment, List<?> list) {
+		System.out.println(comment + ": " + java.util.Arrays.toString(list.toArray()));
+	}
+	
+	public String toString() {
+		return this.getClass().getName();
+	}
+	
 }
