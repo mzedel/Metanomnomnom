@@ -1,0 +1,7 @@
+de.metanome.algorithms.Metanomnomnom@4f023edb
+
+Runtime: 20
+
+Config:
+	databaseName: planets
+	tableNames: WDC_planets
