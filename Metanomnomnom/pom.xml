@@ -84,7 +84,7 @@
                     <archive>
                         <manifestEntries>
                             <Algorithm-Bootstrap-Class>
-                                de.metanome.algorithms.MyUcc
+                                de.metanome.algorithms.Metanomnomnom
                             </Algorithm-Bootstrap-Class>
                         </manifestEntries>
                     </archive>
