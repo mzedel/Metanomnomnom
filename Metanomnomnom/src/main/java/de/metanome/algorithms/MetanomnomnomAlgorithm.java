@@ -38,10 +38,12 @@ public class MetanomnomnomAlgorithm {
 	
 	public void execute() throws AlgorithmExecutionException {
 		/*
-		 * Naive Algorithm
+		 * Simple Algorithm
 		 * - read column names
 		 * - read all data rows, build complete position list index
-		 * - check column combinations until all UCCs are found
+		 * - build complete tree of all column combinations
+		 * - check column combinations until all minimal UCCs are found;
+		 *   use found UCCs for pruning (if a CC contains a UCC, skip it)
 		 */
 
 		// get input source
@@ -59,28 +61,49 @@ public class MetanomnomnomAlgorithm {
 		for (int i = 0; i < columnNames.size(); i++) {
 			columns.put(i, columnNames.get(i));
 		}
-		printList("Columns", columnNames);
 		
-		// create Position List Index
-		PLIBuilder pliBuilder = new PLIBuilder(input);
+		// create Position List Index, null != null
+		PLIBuilder pliBuilder = new PLIBuilder(input, false);
 		List<PositionListIndex> pliList = pliBuilder.getPLIList();
 		
-		// check column combinations
+		/*
+		 * check column combinations
+		 */
+		
+		// prepare list of UCCs
+		List<List<Integer>> uccs = new ArrayList<List<Integer>>();
+		
+		// get set of all column sets
 		ColumnCombinationBitset topCC = new ColumnCombinationBitset(new ArrayList<Integer>(columns.keySet()));
-		List<ColumnCombinationBitset> allCCs = topCC.getAllSubsets();
-		for (int i = allCCs.size() - 2; i >= 0; i--) {	// go from bottom to top, skip empty column set
+		List<ColumnCombinationBitset> allCCs = topCC.getAllSubsets();	// lists CCs from top to bottom
+		
+		// check column sets from bottom to top (skip empty column set)
+		outer: for (int i = allCCs.size() - 2; i >= 0; i--) {
 			// get columns
 			List<Integer> columnList = allCCs.get(i).getSetBits();
-			printList("Checking CC", columnList);
+			
+			// check if CC is a superset of any known UCC (need only minimal UCCs)
+			for (List<Integer> ucc : uccs) {
+				if (columnList.containsAll(ucc)) {
+					// skip to next CC
+					continue outer;
+				}
+			}
+			
 			// create intersection of the PLIs
 			PositionListIndex pli = null;
 			for (Integer columnIndex : columnList) {
 				pli = pli == null ? pliList.get(columnIndex) : pli.intersect(pliList.get(columnIndex));
 			}
+			
 			// check uniqueness
 			if (pli.isUnique()) {
+				this.printList("mUCC", columnList);
+				
+				// remember UCC for pruning
+				uccs.add(columnList);
+				
 				// report UCC
-				System.out.println("\tunique!");
 				List<ColumnIdentifier> identifiers = new ArrayList<ColumnIdentifier>(columnList.size());
 				for (Integer columnIndex : columnList) {
 					identifiers.add(new ColumnIdentifier(tableName, columns.get(columnIndex)));
