@@ -17,8 +17,11 @@
 package de.metanome.algorithms;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 
 import de.metanome.algorithm_helper.data_structures.ColumnCombinationBitset;
@@ -75,17 +78,21 @@ public class MetanomnomnomAlgorithm {
 		
 		// get set of all column sets
 		ColumnCombinationBitset topCC = new ColumnCombinationBitset(new ArrayList<Integer>(columns.keySet()));
+		int topCCSize = columns.size();
 		List<ColumnCombinationBitset> allCCs = topCC.getAllSubsets();	// lists CCs from top to bottom
+		Collections.reverse(allCCs);									// list from bottom to top
+		allCCs.remove(new ColumnCombinationBitset());					// remove empty set
 		
 		// check column sets from bottom to top (skip empty column set)
-		outer: for (int i = allCCs.size() - 2; i >= 0; i--) {
+		outer: while (allCCs.size() > 0) {
 			// get columns
-			List<Integer> columnList = allCCs.get(i).getSetBits();
+			List<Integer> columnList = allCCs.get(0).getSetBits();
 			
 			// check if CC is a superset of any known UCC (need only minimal UCCs)
 			for (List<Integer> ucc : uccs) {
 				if (columnList.containsAll(ucc)) {
 					// skip to next CC
+					allCCs.remove(allCCs.get(0));
 					continue outer;
 				}
 			}
@@ -98,7 +105,23 @@ public class MetanomnomnomAlgorithm {
 			
 			// check uniqueness
 			if (pli.isUnique()) {
-				this.printList("mUCC", columnList);
+				
+				// remove candidates
+				int superSetSize = columnList.size();
+				ColumnCombinationBitset uccBitset = new ColumnCombinationBitset(columnList);
+				Set<ColumnCombinationBitset> sets = new HashSet<ColumnCombinationBitset>();
+				Set<ColumnCombinationBitset> temp = new HashSet<ColumnCombinationBitset>();
+				sets.add(uccBitset);
+				do {
+					superSetSize++;
+					for (ColumnCombinationBitset bitset : sets) {
+						List<ColumnCombinationBitset> superSets = bitset.getDirectSupersets(topCC);
+						temp.addAll(superSets);
+						allCCs.removeAll(superSets);
+					}
+					sets = temp;
+					temp = new HashSet<ColumnCombinationBitset>();
+				} while (superSetSize <= topCCSize);
 				
 				// remember UCC for pruning
 				uccs.add(columnList);
@@ -110,11 +133,8 @@ public class MetanomnomnomAlgorithm {
 				}
 				this.resultReceiver.receiveResult(new UniqueColumnCombination(identifiers.toArray(new ColumnIdentifier[]{})));
 			}
+			allCCs.remove(0);
 		}
-	}
-	
-	private void printList(String comment, List<?> list) {
-		System.out.println(comment + ": " + java.util.Arrays.toString(list.toArray()));
 	}
 	
 	public String toString() {
