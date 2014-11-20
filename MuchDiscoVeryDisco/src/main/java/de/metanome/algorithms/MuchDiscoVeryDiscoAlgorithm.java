@@ -6,8 +6,9 @@ import de.metanome.algorithm_integration.result_receiver.InclusionDependencyResu
 
 public class MuchDiscoVeryDiscoAlgorithm {
 
-  protected RelationalInputGenerator inputGenerator = null;
+  protected RelationalInputGenerator inputGenerator[] = null;
   protected InclusionDependencyResultReceiver resultReceiver = null;
+  protected String[] tableNames = null;
   
   public void execute() throws AlgorithmExecutionException {
     

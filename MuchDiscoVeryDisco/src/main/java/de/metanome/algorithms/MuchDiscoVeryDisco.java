@@ -17,17 +17,18 @@
 package de.metanome.algorithms;
 
 import java.util.ArrayList;
+
 import de.metanome.algorithm_integration.AlgorithmConfigurationException;
 import de.metanome.algorithm_integration.AlgorithmExecutionException;
+import de.metanome.algorithm_integration.algorithm_types.FileInputParameterAlgorithm;
 import de.metanome.algorithm_integration.algorithm_types.InclusionDependencyAlgorithm;
-import de.metanome.algorithm_integration.algorithm_types.RelationalInputParameterAlgorithm;
 import de.metanome.algorithm_integration.configuration.ConfigurationRequirement;
 import de.metanome.algorithm_integration.configuration.ConfigurationRequirementRelationalInput;
-import de.metanome.algorithm_integration.input.RelationalInputGenerator;
+import de.metanome.algorithm_integration.input.FileInputGenerator;
 import de.metanome.algorithm_integration.result_receiver.InclusionDependencyResultReceiver;
 
 public class MuchDiscoVeryDisco extends MuchDiscoVeryDiscoAlgorithm
-    implements InclusionDependencyAlgorithm, RelationalInputParameterAlgorithm {
+    implements InclusionDependencyAlgorithm, FileInputParameterAlgorithm {
 
   public enum Identifier {
     INPUT_GENERATOR
@@ -46,10 +47,18 @@ public class MuchDiscoVeryDisco extends MuchDiscoVeryDiscoAlgorithm
   }
   
   @Override
-  public void setRelationalInputConfigurationValue(String identifier, RelationalInputGenerator... values) throws AlgorithmConfigurationException {
-      if (!MuchDiscoVeryDisco.Identifier.INPUT_GENERATOR.name().equals(identifier))
-          throw new AlgorithmConfigurationException("Input generator does not match the expected identifier: " + identifier + " (given) but " + MuchDiscoVeryDisco.Identifier.INPUT_GENERATOR.name() + " (expected)");
-      this.inputGenerator = values[0];
+  public void setFileInputConfigurationValue(String identifier, FileInputGenerator... values) throws AlgorithmConfigurationException {
+      if (Identifier.INPUT_GENERATOR.name().equals(identifier)) {
+        this.inputGenerator = values;
+        
+        this.tableNames = new String[values.length];
+        for (int i = 0; i < values.length; i++) {
+          this.tableNames[i] = values[i].getInputFile().getName().split("\\.")[0];
+        }
+      }
+      else {
+        throw new AlgorithmConfigurationException("Input generator does not match the expected identifier: " + identifier + " (given) but " + MuchDiscoVeryDisco.Identifier.INPUT_GENERATOR.name() + " (expected)");
+      }
   }
 
   @Override
