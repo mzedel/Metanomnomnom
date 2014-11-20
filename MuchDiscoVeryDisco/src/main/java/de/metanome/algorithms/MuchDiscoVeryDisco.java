@@ -16,23 +16,18 @@
 
 package de.metanome.algorithms;
 
+import java.util.ArrayList;
 import de.metanome.algorithm_integration.AlgorithmConfigurationException;
 import de.metanome.algorithm_integration.AlgorithmExecutionException;
-import de.metanome.algorithm_integration.algorithm_execution.FileGenerator;
-import de.metanome.algorithm_integration.algorithm_types.FunctionalDependencyAlgorithm;
-import de.metanome.algorithm_integration.algorithm_types.StringParameterAlgorithm;
-import de.metanome.algorithm_integration.algorithm_types.TempFileAlgorithm;
-import de.metanome.algorithm_integration.algorithm_types.UniqueColumnCombinationsAlgorithm;
+import de.metanome.algorithm_integration.algorithm_types.InclusionDependencyAlgorithm;
+import de.metanome.algorithm_integration.algorithm_types.RelationalInputParameterAlgorithm;
 import de.metanome.algorithm_integration.configuration.ConfigurationRequirement;
 import de.metanome.algorithm_integration.configuration.ConfigurationRequirementRelationalInput;
-import de.metanome.algorithm_integration.result_receiver.FunctionalDependencyResultReceiver;
-import de.metanome.algorithm_integration.result_receiver.UniqueColumnCombinationResultReceiver;
-
-import java.util.ArrayList;
+import de.metanome.algorithm_integration.input.RelationalInputGenerator;
+import de.metanome.algorithm_integration.result_receiver.InclusionDependencyResultReceiver;
 
 public class MuchDiscoVeryDisco extends MuchDiscoVeryDiscoAlgorithm
-    implements UniqueColumnCombinationsAlgorithm, FunctionalDependencyAlgorithm, TempFileAlgorithm,
-               StringParameterAlgorithm {
+    implements InclusionDependencyAlgorithm, RelationalInputParameterAlgorithm {
 
   public enum Identifier {
     INPUT_GENERATOR
@@ -49,28 +44,23 @@ public class MuchDiscoVeryDisco extends MuchDiscoVeryDiscoAlgorithm
   public void execute() throws AlgorithmExecutionException {
     super.execute();
   }
-
+  
   @Override
-  public void setStringConfigurationValue(String identifier, String... values)
-      throws AlgorithmConfigurationException {
-    // TODO Auto-generated method stub
+  public void setRelationalInputConfigurationValue(String identifier, RelationalInputGenerator... values) throws AlgorithmConfigurationException {
+      if (!MuchDiscoVeryDisco.Identifier.INPUT_GENERATOR.name().equals(identifier))
+          throw new AlgorithmConfigurationException("Input generator does not match the expected identifier: " + identifier + " (given) but " + MuchDiscoVeryDisco.Identifier.INPUT_GENERATOR.name() + " (expected)");
+      this.inputGenerator = values[0];
   }
 
   @Override
-  public void setTempFileGenerator(FileGenerator tempFileGenerator) {
+  public void setResultReceiver(InclusionDependencyResultReceiver resultReceiver) {
     // TODO Auto-generated method stub
   }
-
-  @Override
-  public void setResultReceiver(
-      FunctionalDependencyResultReceiver resultReceiver) {
-    // TODO Auto-generated method stub
-  }
-
-  @Override
-  public void setResultReceiver(
-      UniqueColumnCombinationResultReceiver resultReceiver) {
-    // TODO Auto-generated method stub
-  }
+  
+//  @Override
+//  public void setResultReceiver(
+//      FunctionalDependencyResultReceiver resultReceiver) {
+//    // TODO Auto-generated method stub
+//  }
 
 }

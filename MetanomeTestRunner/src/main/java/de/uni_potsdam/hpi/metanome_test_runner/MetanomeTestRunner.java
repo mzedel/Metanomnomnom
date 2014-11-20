@@ -8,7 +8,7 @@ import de.uni_potsdam.hpi.metanome_test_runner.mocks.MetanomeMock;
 public class MetanomeTestRunner {
 
 	public static void run() {
-		Config conf = new Config(Config.Algorithm.Metanomnomnom, Config.Dataset.PLANETS);
+		Config conf = new Config(Config.Algorithm.MuchDiscoVeryDisco, Config.Dataset.PLANETS);
 		
 		run(conf);
 	}

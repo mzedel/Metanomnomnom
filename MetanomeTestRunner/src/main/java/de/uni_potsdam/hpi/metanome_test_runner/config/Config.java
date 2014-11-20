@@ -5,14 +5,15 @@ import java.io.File;
 public class Config {
 
 	public enum Algorithm {
-		Metanomnomnom
+		Metanomnomnom,
+		MuchDiscoVeryDisco
 	}
 	
 	public enum Dataset {
 		PLANETS
 	}
 	
-	public Config.Algorithm algorithm = Config.Algorithm.Metanomnomnom;
+	public Config.Algorithm algorithm = Config.Algorithm.MuchDiscoVeryDisco;
 	
 	public String databaseName = null;
 	public String[] tableNames = null;
@@ -36,7 +37,7 @@ public class Config {
 	public boolean writeResults = true;
 	
 	public Config() {
-		this(Config.Algorithm.Metanomnomnom, Config.Dataset.PLANETS);
+		this(Config.Algorithm.MuchDiscoVeryDisco, Config.Dataset.PLANETS);
 	}
 
 	public Config(Config.Algorithm algorithm, Config.Dataset dataset) {

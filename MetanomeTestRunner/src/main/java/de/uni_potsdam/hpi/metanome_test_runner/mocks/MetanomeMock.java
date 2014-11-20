@@ -19,7 +19,7 @@ import de.metanome.algorithm_integration.configuration.ConfigurationSettingFileI
 import de.metanome.algorithm_integration.input.RelationalInputGenerator;
 import de.metanome.algorithm_integration.results.InclusionDependency;
 import de.metanome.algorithm_integration.results.Result;
-import de.metanome.algorithms.Metanomnomnom;
+import de.metanome.algorithms.MuchDiscoVeryDisco;
 import de.metanome.backend.input.csv.DefaultFileInputGenerator;
 import de.metanome.backend.result_receiver.ResultsCache;
 import de.uni_potsdam.hpi.metanome_test_runner.config.Config;
@@ -34,8 +34,8 @@ public class MetanomeMock {
 					conf.inputFileIgnoreLeadingWhiteSpace, conf.inputFileSkipLines, conf.inputFileHasHeader, conf.inputFileSkipDifferingLines));
 			ResultsCache resultReceiver = new ResultsCache();
 			
-			Metanomnomnom myUcc = new Metanomnomnom();
-			myUcc.setRelationalInputConfigurationValue(Metanomnomnom.Identifier.INPUT_GENERATOR.name(), inputGenerator);
+			MuchDiscoVeryDisco myUcc = new MuchDiscoVeryDisco();
+			myUcc.setRelationalInputConfigurationValue(MuchDiscoVeryDisco.Identifier.INPUT_GENERATOR.name(), inputGenerator);
 			myUcc.setResultReceiver(resultReceiver);
 			
 			long time = System.currentTimeMillis();
