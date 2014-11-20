@@ -28,48 +28,41 @@ import de.metanome.algorithm_integration.input.FileInputGenerator;
 import de.metanome.algorithm_integration.result_receiver.InclusionDependencyResultReceiver;
 
 public class MuchDiscoVeryDisco extends MuchDiscoVeryDiscoAlgorithm
-    implements InclusionDependencyAlgorithm, FileInputParameterAlgorithm {
+implements InclusionDependencyAlgorithm, FileInputParameterAlgorithm {
 
-  public enum Identifier {
-    INPUT_GENERATOR
-  };
-  
-  @Override
-  public ArrayList<ConfigurationRequirement> getConfigurationRequirements() {
-    ArrayList<ConfigurationRequirement> conf = new ArrayList<>();
-    conf.add(new ConfigurationRequirementRelationalInput(MuchDiscoVeryDisco.Identifier.INPUT_GENERATOR.name(), ConfigurationRequirement.ARBITRARY_NUMBER_OF_VALUES)); // For IND discovery, the number of inputs is arbitrary
-    return conf;
-  }
+	public enum Identifier {
+		INPUT_GENERATOR
+	};
 
-  @Override
-  public void execute() throws AlgorithmExecutionException {
-    super.execute();
-  }
-  
-  @Override
-  public void setFileInputConfigurationValue(String identifier, FileInputGenerator... values) throws AlgorithmConfigurationException {
-      if (Identifier.INPUT_GENERATOR.name().equals(identifier)) {
-        this.inputGenerator = values;
-        
-        this.tableNames = new String[values.length];
-        for (int i = 0; i < values.length; i++) {
-          this.tableNames[i] = values[i].getInputFile().getName().split("\\.")[0];
-        }
-      }
-      else {
-        throw new AlgorithmConfigurationException("Input generator does not match the expected identifier: " + identifier + " (given) but " + MuchDiscoVeryDisco.Identifier.INPUT_GENERATOR.name() + " (expected)");
-      }
-  }
+	@Override
+	public ArrayList<ConfigurationRequirement> getConfigurationRequirements() {
+		ArrayList<ConfigurationRequirement> conf = new ArrayList<>();
+		conf.add(new ConfigurationRequirementRelationalInput(MuchDiscoVeryDisco.Identifier.INPUT_GENERATOR.name(), ConfigurationRequirement.ARBITRARY_NUMBER_OF_VALUES)); // For IND discovery, the number of inputs is arbitrary
+		return conf;
+	}
 
-  @Override
-  public void setResultReceiver(InclusionDependencyResultReceiver resultReceiver) {
-    // TODO Auto-generated method stub
-  }
-  
-//  @Override
-//  public void setResultReceiver(
-//      FunctionalDependencyResultReceiver resultReceiver) {
-//    // TODO Auto-generated method stub
-//  }
+	@Override
+	public void execute() throws AlgorithmExecutionException {
+		super.execute();
+	}
+
+	@Override
+	public void setFileInputConfigurationValue(String identifier, FileInputGenerator... values) throws AlgorithmConfigurationException {
+		if (Identifier.INPUT_GENERATOR.name().equals(identifier)) {
+			this.inputGenerator = values;
+
+			this.tableNames = new String[values.length];
+			for (int i = 0; i < values.length; i++) {
+				this.tableNames[i] = values[i].getInputFile().getName().split("\\.")[0];
+			}
+		} else {
+			throw new AlgorithmConfigurationException("Input generator does not match the expected identifier: " + identifier + " (given) but " + MuchDiscoVeryDisco.Identifier.INPUT_GENERATOR.name() + " (expected)");
+		}
+	}
+
+	@Override
+	public void setResultReceiver(InclusionDependencyResultReceiver resultReceiver) {
+		this.resultReceiver = resultReceiver;
+	}
 
 }
