@@ -1,9 +1,14 @@
 package de.metanome.algorithms;
 
 import de.metanome.algorithm_integration.AlgorithmExecutionException;
+import de.metanome.algorithm_integration.input.RelationalInputGenerator;
+import de.metanome.algorithm_integration.result_receiver.InclusionDependencyResultReceiver;
 
 public class MuchDiscoVeryDiscoAlgorithm {
 
+  protected RelationalInputGenerator inputGenerator = null;
+  protected InclusionDependencyResultReceiver resultReceiver = null;
+  
   public void execute() throws AlgorithmExecutionException {
     
   }

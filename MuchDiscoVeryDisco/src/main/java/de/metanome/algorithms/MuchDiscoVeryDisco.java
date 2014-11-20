@@ -24,6 +24,7 @@ import de.metanome.algorithm_integration.algorithm_types.StringParameterAlgorith
 import de.metanome.algorithm_integration.algorithm_types.TempFileAlgorithm;
 import de.metanome.algorithm_integration.algorithm_types.UniqueColumnCombinationsAlgorithm;
 import de.metanome.algorithm_integration.configuration.ConfigurationRequirement;
+import de.metanome.algorithm_integration.configuration.ConfigurationRequirementRelationalInput;
 import de.metanome.algorithm_integration.result_receiver.FunctionalDependencyResultReceiver;
 import de.metanome.algorithm_integration.result_receiver.UniqueColumnCombinationResultReceiver;
 
@@ -33,15 +34,20 @@ public class MuchDiscoVeryDisco extends MuchDiscoVeryDiscoAlgorithm
     implements UniqueColumnCombinationsAlgorithm, FunctionalDependencyAlgorithm, TempFileAlgorithm,
                StringParameterAlgorithm {
 
+  public enum Identifier {
+    INPUT_GENERATOR
+  };
+  
   @Override
   public ArrayList<ConfigurationRequirement> getConfigurationRequirements() {
-    // TODO Auto-generated method stub
-    return null;
+    ArrayList<ConfigurationRequirement> conf = new ArrayList<>();
+    conf.add(new ConfigurationRequirementRelationalInput(MuchDiscoVeryDisco.Identifier.INPUT_GENERATOR.name(), ConfigurationRequirement.ARBITRARY_NUMBER_OF_VALUES)); // For IND discovery, the number of inputs is arbitrary
+    return conf;
   }
 
   @Override
   public void execute() throws AlgorithmExecutionException {
-    // TODO Auto-generated method stub
+    super.execute();
   }
 
   @Override
