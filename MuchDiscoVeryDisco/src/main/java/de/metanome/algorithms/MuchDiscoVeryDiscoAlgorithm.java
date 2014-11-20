@@ -58,7 +58,9 @@ public class MuchDiscoVeryDiscoAlgorithm {
 				// add data to columns (TreeSet: sorted / distinct)
 				for (int columnIndex = 0; columnIndex < row.size(); columnIndex++) {
 					try {
-						columns.get(columnKeys[columnIndex]).add(row.get(columnIndex));
+						if (row.get(columnIndex) != null) {				// ignore null values
+							columns.get(columnKeys[columnIndex]).add(row.get(columnIndex));
+						}
 					} catch (ArrayIndexOutOfBoundsException e) {
 						throw new AlgorithmExecutionException(
 								"unexpected row size: " + (columnIndex + 1) + " > " + columnKeys.length);
