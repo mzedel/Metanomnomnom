@@ -49,8 +49,8 @@ public class MuchDiscoVeryDiscoAlgorithm {
 				columns.put(columnName, new TreeSet<String>());			// TreeSet: natural ordering, distinctness
 			}
 			// get column key set (= column names) (LinkedHashMap: sorted)
-			String[] columnKeys = (String[]) columns.keySet().toArray();
-			
+	        String[] columnKeys = new String[columns.keySet().size()];
+	        columns.keySet().toArray(columnKeys);
 			// read data
 			while (input.hasNext()) {
 				// read next row
@@ -73,7 +73,8 @@ public class MuchDiscoVeryDiscoAlgorithm {
 			tableColumns.put(tableName, columns);
 		}
 		// get table key set (= table names) (LinkedHashMap: sorted)
-		String[] tableKeys = (String[]) tableColumns.keySet().toArray();
+		String[] tableKeys = new String[tableColumns.keySet().size()];
+		tableColumns.keySet().toArray(tableKeys);
 		
 		/*
 		 * search for inclusion dependencies (simple: brute force)
@@ -82,8 +83,8 @@ public class MuchDiscoVeryDiscoAlgorithm {
 			// get next table
 			String dependentTable = tableKeys[dependentTableIndex];
 			Map<String, Set<String>> dependentTableColumns = tableColumns.get(dependentTable);
-			String[] dependentTableColumnsKeys = (String[]) dependentTableColumns.keySet().toArray();
-			
+			String[] dependentTableColumnsKeys = new String[dependentTableColumns.keySet().size()];
+			dependentTableColumns.keySet().toArray(dependentTableColumnsKeys);
 			for (int dependentColumnIndex = 0; dependentColumnIndex < dependentTableColumnsKeys.length; dependentColumnIndex++) {
 				// get next dependent column
 				String dependentColumn = dependentTableColumnsKeys[dependentColumnIndex];
@@ -94,7 +95,8 @@ public class MuchDiscoVeryDiscoAlgorithm {
 					// get next referenced table
 					String referencedTable = tableKeys[referencedTableIndex];
 					Map<String, Set<String>> referencedTableColumns = tableColumns.get(referencedTable);
-					String[] referencedTableColumnsKeys = (String[]) referencedTableColumns.keySet().toArray();
+					String[] referencedTableColumnsKeys = new String[referencedTableColumns.keySet().size()];
+					referencedTableColumns.keySet().toArray(referencedTableColumnsKeys);
 					
 					for (int referencedColumnIndex = 0; referencedColumnIndex < referencedTableColumnsKeys.length; referencedColumnIndex++) {
 						// get next referenced column

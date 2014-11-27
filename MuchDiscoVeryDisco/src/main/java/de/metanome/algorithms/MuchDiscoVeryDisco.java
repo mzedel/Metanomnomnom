@@ -23,7 +23,7 @@ import de.metanome.algorithm_integration.AlgorithmExecutionException;
 import de.metanome.algorithm_integration.algorithm_types.FileInputParameterAlgorithm;
 import de.metanome.algorithm_integration.algorithm_types.InclusionDependencyAlgorithm;
 import de.metanome.algorithm_integration.configuration.ConfigurationRequirement;
-import de.metanome.algorithm_integration.configuration.ConfigurationRequirementRelationalInput;
+import de.metanome.algorithm_integration.configuration.ConfigurationRequirementFileInput;
 import de.metanome.algorithm_integration.input.FileInputGenerator;
 import de.metanome.algorithm_integration.result_receiver.InclusionDependencyResultReceiver;
 
@@ -37,7 +37,7 @@ implements InclusionDependencyAlgorithm, FileInputParameterAlgorithm {
 	@Override
 	public ArrayList<ConfigurationRequirement> getConfigurationRequirements() {
 		ArrayList<ConfigurationRequirement> conf = new ArrayList<>();
-		conf.add(new ConfigurationRequirementRelationalInput(MuchDiscoVeryDisco.Identifier.INPUT_GENERATOR.name(), ConfigurationRequirement.ARBITRARY_NUMBER_OF_VALUES)); // For IND discovery, the number of inputs is arbitrary
+		conf.add(new ConfigurationRequirementFileInput(MuchDiscoVeryDisco.Identifier.INPUT_GENERATOR.name(), ConfigurationRequirement.ARBITRARY_NUMBER_OF_VALUES)); // For IND discovery, the number of inputs is arbitrary
 		return conf;
 	}
 
