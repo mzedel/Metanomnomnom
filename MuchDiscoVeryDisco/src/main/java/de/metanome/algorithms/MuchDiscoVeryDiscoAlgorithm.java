@@ -3,6 +3,7 @@ package de.metanome.algorithms;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.NavigableSet;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -28,8 +29,10 @@ public class MuchDiscoVeryDiscoAlgorithm {
 		/*
 		 * read columns of tables (simple: in main memory)
 		 */
-		Map<String, Map<String, Set<String>>> tableColumns 
-			= new LinkedHashMap<String, Map<String, Set<String>>>();	// LinkedHashMap: preserve key order
+		TreeSet<TableColumnEntry> tableColumns 
+			= new TreeSet<TableColumnEntry>();
+		// create non-natural ordering in column collection to start by comparing probably relevant tables and 
+        // discard more and more tables and thus reduce comparisons
 		
 		for (int tableIndex = 0; tableIndex < inputGenerator.length; tableIndex++) {
 			// prepare to read next file (= table)
@@ -70,62 +73,30 @@ public class MuchDiscoVeryDiscoAlgorithm {
 			
 			// add to list of table data
 			String tableName = this.tableNames[tableIndex];
-			tableColumns.put(tableName, columns);
-		}
-		// get table key set (= table names) (LinkedHashMap: sorted)
-		String[] tableKeys = new String[tableColumns.keySet().size()];
-		tableColumns.keySet().toArray(tableKeys);
-		
-		/*
-		 * search for inclusion dependencies (simple: brute force)
-		 */
-		for (int dependentTableIndex = 0; dependentTableIndex < tableKeys.length; dependentTableIndex++) {
-			// get next table
-			String dependentTable = tableKeys[dependentTableIndex];
-			Map<String, Set<String>> dependentTableColumns = tableColumns.get(dependentTable);
-			String[] dependentTableColumnsKeys = new String[dependentTableColumns.keySet().size()];
-			dependentTableColumns.keySet().toArray(dependentTableColumnsKeys);
-			for (int dependentColumnIndex = 0; dependentColumnIndex < dependentTableColumnsKeys.length; dependentColumnIndex++) {
-				// get next dependent column
-				String dependentColumn = dependentTableColumnsKeys[dependentColumnIndex];
-				Set<String> dependentColumnSet = dependentTableColumns.get(dependentColumn);
-				
-				// try each candidate (= any column of any relation)
-				for (int referencedTableIndex = 0; referencedTableIndex < tableKeys.length; referencedTableIndex++) {
-					// get next referenced table
-					String referencedTable = tableKeys[referencedTableIndex];
-					Map<String, Set<String>> referencedTableColumns = tableColumns.get(referencedTable);
-					String[] referencedTableColumnsKeys = new String[referencedTableColumns.keySet().size()];
-					referencedTableColumns.keySet().toArray(referencedTableColumnsKeys);
-					
-					for (int referencedColumnIndex = 0; referencedColumnIndex < referencedTableColumnsKeys.length; referencedColumnIndex++) {
-						// get next referenced column
-						String referencedColumn = referencedTableColumnsKeys[referencedColumnIndex];
-						Set<String> referencedColumnSet = referencedTableColumns.get(referencedColumn);
-						
-						// check identity of columns
-						if (dependentTableIndex == referencedTableIndex
-								&& dependentColumnIndex == referencedColumnIndex) {
-							// same column of the same relation => trivial case, no need to check
-							if (MuchDiscoVeryDiscoAlgorithm.RETURN_TRIVIAL) {
-								// report trivial case
-								this.report(dependentTable, dependentColumn, referencedTable, referencedColumn);
-							}
-							// skip to next column
-							continue;
-						}
-						
-						// try each candidate (= any column of any relation)
-						if (referencedColumnSet.containsAll(dependentColumnSet)) {
-							// found inclusion dependency => report
-							this.report(dependentTable, dependentColumn, referencedTable, referencedColumn);
-						}
-					}
-				}
+			for (String columnName : columns.keySet()) {
+			  tableColumns.add(new TableColumnEntry(tableName, columnName, columns.get(columnName)));
 			}
+		}
+		
+		for (TableColumnEntry column : tableColumns) {
+		  checkOtherColumns(column, tableColumns);
 		}
 	}
 	
+	@SuppressWarnings("unused")
+  private void checkOtherColumns(TableColumnEntry column, NavigableSet<TableColumnEntry> navigableSet) throws AlgorithmExecutionException {
+	  if (navigableSet.isEmpty()) return;
+	  TableColumnEntry currentItem = navigableSet.first();
+	  boolean isTrivial = column.TableName.equals(currentItem.TableName) && column.ColumnName.equals(currentItem.ColumnName);
+	  if (MuchDiscoVeryDiscoAlgorithm.RETURN_TRIVIAL && isTrivial) {
+        this.report(column.TableName, column.ColumnName, currentItem.TableName, currentItem.ColumnName);
+	  } else if (!isTrivial && column.ColumnData.containsAll(currentItem.ColumnData)) {
+	    this.report(column.TableName, column.ColumnName, currentItem.TableName, currentItem.ColumnName);
+	  }
+	  if(navigableSet.size() > 1)
+	    checkOtherColumns(column, navigableSet.tailSet(currentItem, false));
+    }
+
 	private void report(String dependentTable, String dependentColumn, String referencedTable, String referencedColumn) 
 			throws CouldNotReceiveResultException {
 		this.resultReceiver.receiveResult(
