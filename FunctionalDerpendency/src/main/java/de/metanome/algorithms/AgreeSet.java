@@ -23,7 +23,6 @@ public class AgreeSet {
   
   public static List<AgreeSet> calculateAgreeSets(StrippedPartition partitions) {
     List<OpenBitSet> max = StrippedPartition.CreateMaxSets(partitions);
-    System.out.println("max sets " + max.size());
     Map<Integer, EquivalenceClass> equivalenceClasses = new HashMap<Integer, EquivalenceClass>();
     for (Entry<Integer, LinkedList<OpenBitSet>> partition : partitions.entrySet()) {
       int partsIndex = 0;

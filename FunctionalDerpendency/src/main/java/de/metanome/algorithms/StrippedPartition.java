@@ -27,8 +27,6 @@ public class StrippedPartition extends HashMap<Integer, LinkedList<OpenBitSet>> 
     LinkedList<OpenBitSet> item = this.get(key);
     if(item == null)
       item = new LinkedList<OpenBitSet>();
-
-    System.out.println("bitset to add: " + object);
     item.add(object);
     this.put(key, item);
   }
@@ -39,13 +37,11 @@ public class StrippedPartition extends HashMap<Integer, LinkedList<OpenBitSet>> 
     for (int column = 0; column < input.numberOfColumns(); column++) {
       partitions.put(column, new HashMap<String, OpenBitSet>());
     }
-    System.out.println("partitions: " + partitions.size());    
     List<String> line;
     int lineCounter = 0;
     int columnCounter;
     try {
       while ((line = input.next()) != null) {
-//        System.out.println("input line: " + line);
         columnCounter = 0;
         for (String column : line) {
           if (null == column)
