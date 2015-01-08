@@ -20,18 +20,18 @@ import java.util.ArrayList;
 
 import de.metanome.algorithm_integration.AlgorithmConfigurationException;
 import de.metanome.algorithm_integration.AlgorithmExecutionException;
+import de.metanome.algorithm_integration.algorithm_types.FileInputParameterAlgorithm;
 import de.metanome.algorithm_integration.algorithm_types.FunctionalDependencyAlgorithm;
-import de.metanome.algorithm_integration.algorithm_types.RelationalInputParameterAlgorithm;
 import de.metanome.algorithm_integration.algorithm_types.StringParameterAlgorithm;
 import de.metanome.algorithm_integration.configuration.ConfigurationRequirement;
-import de.metanome.algorithm_integration.configuration.ConfigurationRequirementRelationalInput;
+import de.metanome.algorithm_integration.configuration.ConfigurationRequirementFileInput;
 import de.metanome.algorithm_integration.configuration.ConfigurationRequirementString;
 import de.metanome.algorithm_integration.configuration.ConfigurationSettingString;
-import de.metanome.algorithm_integration.input.RelationalInputGenerator;
+import de.metanome.algorithm_integration.input.FileInputGenerator;
 import de.metanome.algorithm_integration.result_receiver.FunctionalDependencyResultReceiver;
 
 public class FunctionalDerpendency extends FunctionalDerpendencyAlgorithm 
-  implements RelationalInputParameterAlgorithm, StringParameterAlgorithm, FunctionalDependencyAlgorithm {
+  implements StringParameterAlgorithm, FileInputParameterAlgorithm, FunctionalDependencyAlgorithm {
 
   private ArrayList<ConfigurationRequirement> conf = new ArrayList<>();
 
@@ -41,8 +41,8 @@ public class FunctionalDerpendency extends FunctionalDerpendencyAlgorithm
   
   @Override
   public ArrayList<ConfigurationRequirement> getConfigurationRequirements() {
-//    conf.add(new ConfigurationRequirementFileInput(FunctionalDerpendency.Identifier.INPUT_GENERATOR.name(), ConfigurationRequirement.ARBITRARY_NUMBER_OF_VALUES));
-    conf.add(new ConfigurationRequirementRelationalInput("Relational_Input"));
+    conf.add(new ConfigurationRequirementFileInput(FunctionalDerpendency.Identifier.INPUT_GENERATOR.name(), ConfigurationRequirement.ARBITRARY_NUMBER_OF_VALUES));
+//    conf.add(new ConfigurationRequirementRelationalInput("File_Input"));
     return conf;
   }
 
@@ -87,9 +87,15 @@ public class FunctionalDerpendency extends FunctionalDerpendencyAlgorithm
     }
   }
 
+//  @Override
+//  public void setRelationalInputConfigurationValue(String identifier, RelationalInputGenerator... values) throws AlgorithmConfigurationException {
+//    if (identifier.equals("Relational_Input"))
+//      super.inputGenerator = values[0];
+//  }
+
   @Override
-  public void setRelationalInputConfigurationValue(String identifier, RelationalInputGenerator... values) throws AlgorithmConfigurationException {
-    if (identifier.equals("Relational_Input"))
+  public void setFileInputConfigurationValue(String identifier, FileInputGenerator... values)
+      throws AlgorithmConfigurationException {
       super.inputGenerator = values[0];
   }
 }

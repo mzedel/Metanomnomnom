@@ -2,8 +2,8 @@ package de.metanome.algorithms;
 
 public class Tuple<T1, T2> {
   
-  private T1 left;
-  private T2 right;
+  public T1 left;
+  public T2 right;
   
   public Tuple(T1 left, T2 right) {
     this.left = left;

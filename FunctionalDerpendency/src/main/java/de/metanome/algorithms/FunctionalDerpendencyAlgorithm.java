@@ -1,23 +1,20 @@
 package de.metanome.algorithms;
 
 import java.util.ArrayList;
-import java.util.Iterator;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
-import java.util.TreeSet;
 
 import de.metanome.algorithm_integration.AlgorithmExecutionException;
-import de.metanome.algorithm_integration.ColumnCombination;
-import de.metanome.algorithm_integration.ColumnIdentifier;
+import de.metanome.algorithm_integration.input.FileInputGenerator;
 import de.metanome.algorithm_integration.input.RelationalInput;
-import de.metanome.algorithm_integration.input.RelationalInputGenerator;
 import de.metanome.algorithm_integration.result_receiver.FunctionalDependencyResultReceiver;
-import de.metanome.algorithm_integration.results.FunctionalDependency;
 
 public class FunctionalDerpendencyAlgorithm {
 
-  protected RelationalInputGenerator inputGenerator = null;
+  protected FileInputGenerator inputGenerator = null;
   protected FunctionalDependencyResultReceiver resultReceiver = null;
   protected String[] tableNames = null;
   protected List<String> columnNames = null;
@@ -40,95 +37,100 @@ public class FunctionalDerpendencyAlgorithm {
     tableName = input.relationName();
 
     Set<DifferenceSet> diffSets = DifferenceSet.generateDifferenceSets(input);
-    Set<ComparableFunctionalDependency> result = new TreeSet<ComparableFunctionalDependency>();
-    
+    Set<ComparableFunctionalDependency> result = new LinkedHashSet<ComparableFunctionalDependency>();
+    System.out.println("let's gooooo:" + diffSets.size()); 
     List<Integer> ordering = new ArrayList<Integer>();
     for (int i = 0; i < columnNames.size(); i++) {
       ordering.add(i);
     }
     for (int attr = 0; attr < columnNames.size(); attr++) { 
       Set<DifferenceSet> DA = computeSubSets(diffSets, attr);
-      Set<DifferenceSet> DA2 = new TreeSet<DifferenceSet>(DA);
+      Set<DifferenceSet> DA2 = new LinkedHashSet<DifferenceSet>(DA);
       if (!DA.isEmpty()) {
         List<Integer> order = new ArrayList<Integer>();
         for (Integer item : ordering) {
           if (item != attr) order.add(item);
         }
-        result = findCovers(attr, DA, DA2, new LinkedList<Integer>(), order);
-      }
+        result.addAll(findCovers(attr, DA, DA2, new LinkedList<Integer>(), order));
+      } 
+//      else {
+//        result.add(new ComparableFunctionalDependency(new HashSet<Integer>(), attr));
+//      }
     }
     
     for (ComparableFunctionalDependency dep : result) {
-      this.resultReceiver.receiveResult(dep.fd);
+      this.resultReceiver.receiveResult(dep.toFunctionalDependency(tableName, columnNames));
     }
   }
   
   private Set<ComparableFunctionalDependency> findCovers(Integer attribute, Set<DifferenceSet> differenceSets, 
       Set<DifferenceSet> uncoveredDifferenceSets, List<Integer> path, List<Integer> ordering) {
-    Set<ComparableFunctionalDependency> result = new TreeSet<ComparableFunctionalDependency>();
+    Set<ComparableFunctionalDependency> result = new LinkedHashSet<ComparableFunctionalDependency>();
+
+//    System.out.println(path);
     if (ordering.isEmpty() && !uncoveredDifferenceSets.isEmpty()) {
-      return new TreeSet<ComparableFunctionalDependency>(); // no FDs here 
+      return new LinkedHashSet<ComparableFunctionalDependency>(); // no FDs here 
     }
     if (uncoveredDifferenceSets.isEmpty()) {
       Set<DifferenceSet> DA = computeSubSets(differenceSets, attribute);
-      int coverSize = computeCoverSize(DA, path);
+      int coverSize = computeCoverSize(DA, path) + 1;
       if (coverSize >= path.size()) {
-        ColumnIdentifier ident = new ColumnIdentifier(tableName, columnNames.get(attribute));
-        Set<ComparableFunctionalDependency> list = new TreeSet<ComparableFunctionalDependency>();
+        int ident = attribute;
         for (DifferenceSet set : differenceSets) {
-          ColumnIdentifier[] identifiers = new ColumnIdentifier[set.size()];
-          Iterator<String> it = set.iterator();
-          for (int i = 0; i < set.size(); i++) {
-            String id = it.next();
-            identifiers[i] = new ColumnIdentifier(tableName, id);
+          ArrayList<Integer> identifiers = new ArrayList<Integer>();
+          for (Integer id : set) {
+            identifiers.add(id);
           }
-          ColumnCombination comb = new ColumnCombination(identifiers);
-          list.add(new ComparableFunctionalDependency(new FunctionalDependency(comb, ident)));
+          result.add(new ComparableFunctionalDependency(new LinkedHashSet<Integer>(identifiers), ident));
         }
-        return list;
+        System.out.println("Result   size: " + result.size());
+        return result;
       } else {
-        return new TreeSet<ComparableFunctionalDependency>(); // wasted effort,non-minimal result
+        return new LinkedHashSet<ComparableFunctionalDependency>(); // wasted effort,non-minimal result
       }
     }
 
 //  RecursiveCase : 
     for (Integer attr : ordering) {
 //      if (attr == attribute) continue; 
-      Set<DifferenceSet> nextSets = new TreeSet<DifferenceSet>();
+      Set<DifferenceSet> nextSets = new HashSet<DifferenceSet>();
       for (DifferenceSet ds : uncoveredDifferenceSets) {
         if (covers(ds, attr))
           nextSets.add(ds);
       }
+      System.out.println(uncoveredDifferenceSets);
+
+      System.out.println("Next:");
+      System.out.println(nextSets);
       uncoveredDifferenceSets.removeAll(nextSets); //difference sets of uncoveredDifferenceSets not covered by attr;
-      nextSets = uncoveredDifferenceSets;
       List<Integer> order = new ArrayList<Integer>();
       for (Integer item : ordering) {
         if (!item.equals(attr)) order.add(item);
       }
       path.add(attr);
-      result.addAll(findCovers(attribute, differenceSets, nextSets, path, order));
+      result.addAll(findCovers(attribute, differenceSets, uncoveredDifferenceSets, path, order));
     }
+    System.out.println("Resultsize: " + result.size());
     return result;
   }
 
   private Set<DifferenceSet> computeSubSets(Set<DifferenceSet> diffSets, int attr) {
-    Set<DifferenceSet> result = new TreeSet<DifferenceSet>();
+    Set<DifferenceSet> result = new LinkedHashSet<DifferenceSet>();
     
-    String string = columnNames.get(attr);
     DifferenceSet newSet;
     for (DifferenceSet set : diffSets) {
       newSet = (DifferenceSet) set.clone();
-      if (set.contains(string)) {
-        newSet.remove(string);
+      if (set.contains(attr)) {
+        newSet.remove(attr);
       }
-      result.add(newSet);
+      if (!newSet.isEmpty())
+        result.add(newSet);
     }
     return result;
   }
   
-  protected boolean covers(DifferenceSet t, int attrib) {
-    String attribute = columnNames.get(attrib);
-    for (String attr : t) {
+  protected boolean covers(DifferenceSet t, Integer attribute) {
+    for (Integer attr : t) {
       if (attr.equals(attribute))
         return true;
     }
@@ -139,14 +141,13 @@ public class FunctionalDerpendencyAlgorithm {
     int biggestCover = 0;
     for (DifferenceSet set : dA) {
       int counter = 0;
-      for (String column : set) {
-        int columnIndex = columnNames.indexOf(column);
-        if (path.contains(columnIndex)) {
+      for (Integer column : set) {
+        if (path.contains(column)) {
           counter++;
         }
       }
       if (counter > biggestCover)
-        biggestCover = counter;
+        biggestCover += counter;
     }
     return biggestCover;
   }

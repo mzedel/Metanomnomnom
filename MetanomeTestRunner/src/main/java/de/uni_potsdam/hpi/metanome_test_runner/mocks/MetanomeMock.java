@@ -16,10 +16,10 @@ import java.util.List;
 import de.metanome.algorithm_integration.AlgorithmExecutionException;
 import de.metanome.algorithm_integration.ColumnIdentifier;
 import de.metanome.algorithm_integration.configuration.ConfigurationSettingFileInput;
-import de.metanome.algorithm_integration.input.RelationalInputGenerator;
-import de.metanome.algorithm_integration.results.InclusionDependency;
+import de.metanome.algorithm_integration.input.FileInputGenerator;
+import de.metanome.algorithm_integration.results.FunctionalDependency;
 import de.metanome.algorithm_integration.results.Result;
-import de.metanome.algorithms.MuchDiscoVeryDisco;
+import de.metanome.algorithms.FunctionalDerpendency;
 import de.metanome.backend.input.csv.DefaultFileInputGenerator;
 import de.metanome.backend.result_receiver.ResultsCache;
 import de.uni_potsdam.hpi.metanome_test_runner.config.Config;
@@ -28,14 +28,14 @@ public class MetanomeMock {
 
 	public static void execute(Config conf) {
 		try {
-			RelationalInputGenerator inputGenerator = new DefaultFileInputGenerator(new ConfigurationSettingFileInput(
-					conf.inputFolderPath + conf.databaseName + File.separator + conf.tableNames[0] + conf.inputFileEnding, true,
+			FileInputGenerator inputGenerator = new DefaultFileInputGenerator(new ConfigurationSettingFileInput(
+					conf.inputFolderPath + conf.databaseName + File.separator + conf.tableNames[2] + conf.inputFileEnding, true,
 					conf.inputFileSeparator, conf.inputFileQuotechar, conf.inputFileEscape, conf.inputFileStrictQuotes, 
 					conf.inputFileIgnoreLeadingWhiteSpace, conf.inputFileSkipLines, conf.inputFileHasHeader, conf.inputFileSkipDifferingLines));
 			ResultsCache resultReceiver = new ResultsCache();
 			
-			MuchDiscoVeryDisco myUcc = new MuchDiscoVeryDisco();
-			myUcc.setRelationalInputConfigurationValue(MuchDiscoVeryDisco.Identifier.INPUT_GENERATOR.name(), inputGenerator);
+			FunctionalDerpendency myUcc = new FunctionalDerpendency();
+			myUcc.setFileInputConfigurationValue(FunctionalDerpendency.Identifier.INPUT_GENERATOR.name(), inputGenerator);
 			myUcc.setResultReceiver(resultReceiver);
 			
 			long time = System.currentTimeMillis();
@@ -59,10 +59,10 @@ public class MetanomeMock {
 		HashMap<String, List<String>> ref2Deps = new HashMap<String, List<String>>();
 
 		for (Result result : results) {
-			InclusionDependency ind = (InclusionDependency) result;
+			FunctionalDependency ind = (FunctionalDependency) result;
 			
 			StringBuilder refBuilder = new StringBuilder("(");
-			Iterator<ColumnIdentifier> refIterator = ind.getReferenced().getColumnIdentifiers().iterator();
+			Iterator<ColumnIdentifier> refIterator = ind.getDeterminant().getColumnIdentifiers().iterator();
 			while (refIterator.hasNext()) {
 				refBuilder.append(refIterator.next().toString());
 				if (refIterator.hasNext())
@@ -73,14 +73,8 @@ public class MetanomeMock {
 			String ref = refBuilder.toString();
 			
 			StringBuilder depBuilder = new StringBuilder("(");
-			Iterator<ColumnIdentifier> depIterator = ind.getDependant().getColumnIdentifiers().iterator();
-			while (depIterator.hasNext()) {
-				depBuilder.append(depIterator.next().toString());
-				if (depIterator.hasNext())
-					depBuilder.append(",");
-				else
-					depBuilder.append(")");
-			}
+			depBuilder.append(ind.getDependant());
+			depBuilder.append(")");
 			String dep = depBuilder.toString();
 			
 			if (!ref2Deps.containsKey(ref))
@@ -102,6 +96,7 @@ public class MetanomeMock {
 			if (!dependants.isEmpty())
 				builder.append("\r\n");
 		}
+		System.out.println(builder.toString());
 		return builder.toString();
 	}
 	

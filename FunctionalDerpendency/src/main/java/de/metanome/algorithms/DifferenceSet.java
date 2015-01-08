@@ -1,13 +1,13 @@
 package de.metanome.algorithms;
 
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.TreeSet;
 
 import de.metanome.algorithm_integration.input.RelationalInput;
 
-public class DifferenceSet extends TreeSet<String> implements Comparable<DifferenceSet> {
+public class DifferenceSet extends LinkedHashSet<Integer> implements Comparable<DifferenceSet> {
   
   /**
    * 
@@ -15,28 +15,33 @@ public class DifferenceSet extends TreeSet<String> implements Comparable<Differe
   private static final long serialVersionUID = -7995827309860186725L;
 
   public static Set<DifferenceSet> generateDifferenceSets(RelationalInput input) {
-    Set<DifferenceSet> resultDifferenceSet = new TreeSet<DifferenceSet>();
+    Set<DifferenceSet> resultDifferenceSet = new LinkedHashSet<DifferenceSet>();
     
     // Compute stripped partitions for all attributes:
-    StrippedPartition strips = StrippedPartition.createStrippedPartitons(input);
+    StrippedPartitions strips = StrippedPartitions.createStrippedPartitons(input);
     
     // Compute agree sets from stripped partitions:
-    List<AgreeSet> tempAgreeSet = AgreeSet.calculateAgreeSets(strips);
+    Set<AgreeSet> tempAgreeSet = AgreeSet.calculateAgreeSets(strips);
 
     List<String> columnNames = input.columnNames();
     // Complement agree sets to get difference sets : 
     for (AgreeSet set : tempAgreeSet) {
-      resultDifferenceSet.add(createDifferenceSet(set, columnNames));
+      System.out.println(set.ColumnIds);
+      DifferenceSet ds = createDifferenceSet(set, columnNames);
+      resultDifferenceSet.add(ds);
     }
     return resultDifferenceSet;
   }
   
   private static DifferenceSet createDifferenceSet(AgreeSet set, List<String> columnNames) {
     DifferenceSet result = new DifferenceSet();
-    for (String string : columnNames) {
-      if(set.ColumnIds.contains(columnNames.indexOf(string)))
-        result.add(string);
+    for (String s : columnNames) {
+      int i = columnNames.indexOf(s);
+      if(!set.ColumnIds.contains(i))
+        result.add(i);
     }
+    if (result.isEmpty() && set.ColumnIds.size() == columnNames.size())
+      result.addAll(set.ColumnIds);
     return result;
   }
   
@@ -54,9 +59,9 @@ public class DifferenceSet extends TreeSet<String> implements Comparable<Differe
     else if(a.size() > b.size()) return 1;
     else if(b.size() > a.size()) return -1;
     else {
-      Iterator<String> itB = b.iterator();
-      for (String itemA : this) {
-        String itemB = itB.next();
+      Iterator<Integer> itB = b.iterator();
+      for (Integer itemA : this) {
+        Integer itemB = itB.next();
         if (!itemA.equals(itemB))
          return itemA.compareTo(itemB);
       }

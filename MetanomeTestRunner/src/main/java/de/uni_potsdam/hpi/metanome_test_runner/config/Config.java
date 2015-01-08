@@ -6,14 +6,15 @@ public class Config {
 
 	public enum Algorithm {
 		Metanomnomnom,
-		MuchDiscoVeryDisco
+		MuchDiscoVeryDisco,
+		FunctionalDerpendency
 	}
 	
 	public enum Dataset {
 		PLANETS
 	}
 	
-	public Config.Algorithm algorithm = Config.Algorithm.MuchDiscoVeryDisco;
+	public Config.Algorithm algorithm = Config.Algorithm.FunctionalDerpendency;
 	
 	public String databaseName = null;
 	public String[] tableNames = null;
@@ -37,7 +38,7 @@ public class Config {
 	public boolean writeResults = true;
 	
 	public Config() {
-		this(Config.Algorithm.MuchDiscoVeryDisco, Config.Dataset.PLANETS);
+		this(Config.Algorithm.FunctionalDerpendency, Config.Dataset.PLANETS);
 	}
 
 	public Config(Config.Algorithm algorithm, Config.Dataset dataset) {
@@ -49,8 +50,14 @@ public class Config {
 		switch (dataset) {
 			case PLANETS:
 				this.databaseName = "planets";
-				this.tableNames = new String[] {"WDC_planets"}; // TODO: Add all tables of the planets data set here for the IND detection task!
+				this.tableNames = new String[] {
+				    "WDC_age", "WDC_appearances", "WDC_astrology", "WDC_astronomical", 
+				    "WDC_game", "WDC_kepler", "WDC_planets", "WDC_planetz", 
+				    "WDC_satellites", "WDC_science", "WDC_symbols"
+				    }; // TODO: Add all tables of the planets data set here for the IND detection task!
 				break;
+        default:
+          break;
 		}
 	}
 

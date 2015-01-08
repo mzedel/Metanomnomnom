@@ -1,11 +1,13 @@
 package de.metanome.algorithms;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import org.apache.lucene.util.OpenBitSet;
 
@@ -21,10 +23,10 @@ public class AgreeSet {
     }
   }
   
-  public static List<AgreeSet> calculateAgreeSets(StrippedPartition partitions) {
-    List<OpenBitSet> max = StrippedPartition.CreateMaxSets(partitions);
-    Map<Integer, EquivalenceClass> equivalenceClasses = new HashMap<Integer, EquivalenceClass>();
-    for (Entry<Integer, LinkedList<OpenBitSet>> partition : partitions.entrySet()) {
+  public static Set<AgreeSet> calculateAgreeSets(StrippedPartitions partitions) {
+    List<ComparableOpenBitSet> max = StrippedPartitions.CreateMaxSets(partitions);
+    Map<Integer, EquivalenceClass> equivalenceClasses = new LinkedHashMap<Integer, EquivalenceClass>();
+    for (Entry<Integer, LinkedList<ComparableOpenBitSet>> partition : partitions.entrySet()) {
       int partsIndex = 0;
       // partition might need to be sorted in ascending order,
       // based on the appearance of the first set bit in the OpenBitSet
@@ -48,9 +50,9 @@ public class AgreeSet {
         partsIndex++;
       }
     }
-    List<AgreeSet> agreeSets = new LinkedList<AgreeSet>();
+    Set<AgreeSet> agreeSets = new LinkedHashSet<AgreeSet>();
+    List<EquivalenceClass> intersections = new ArrayList<EquivalenceClass>();
     for (OpenBitSet bits : max) {
-      List<EquivalenceClass> intersections = new ArrayList<EquivalenceClass>();
       Integer currentBit = 0;
       Integer lastBit = 0;
       List<EquivalenceClass> toIntersect = new ArrayList<EquivalenceClass>();
@@ -62,8 +64,8 @@ public class AgreeSet {
       if (intersections.isEmpty())
         intersections.addAll(toIntersect);
       intersections.retainAll(toIntersect);
-      
-      agreeSets.add(new AgreeSet(intersections));
+      if (!intersections.isEmpty())
+        agreeSets.add(new AgreeSet(intersections));
     }
     return agreeSets;
   }
