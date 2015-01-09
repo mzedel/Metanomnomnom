@@ -26,7 +26,6 @@ public class DifferenceSet extends LinkedHashSet<Integer> implements Comparable<
     List<String> columnNames = input.columnNames();
     // Complement agree sets to get difference sets : 
     for (AgreeSet set : tempAgreeSet) {
-      System.out.println(set.ColumnIds);
       DifferenceSet ds = createDifferenceSet(set, columnNames);
       resultDifferenceSet.add(ds);
     }
@@ -35,12 +34,15 @@ public class DifferenceSet extends LinkedHashSet<Integer> implements Comparable<
   
   private static DifferenceSet createDifferenceSet(AgreeSet set, List<String> columnNames) {
     DifferenceSet result = new DifferenceSet();
+    int contains = 0;
     for (String s : columnNames) {
       int i = columnNames.indexOf(s);
       if(!set.ColumnIds.contains(i))
         result.add(i);
+      else
+        contains++;
     }
-    if (result.isEmpty() && set.ColumnIds.size() == columnNames.size())
+    if (contains == set.ColumnIds.size())
       result.addAll(set.ColumnIds);
     return result;
   }

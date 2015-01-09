@@ -38,7 +38,6 @@ public class FunctionalDerpendencyAlgorithm {
 
     Set<DifferenceSet> diffSets = DifferenceSet.generateDifferenceSets(input);
     Set<ComparableFunctionalDependency> result = new LinkedHashSet<ComparableFunctionalDependency>();
-    System.out.println("let's gooooo:" + diffSets.size()); 
     List<Integer> ordering = new ArrayList<Integer>();
     for (int i = 0; i < columnNames.size(); i++) {
       ordering.add(i);
@@ -53,9 +52,6 @@ public class FunctionalDerpendencyAlgorithm {
         }
         result.addAll(findCovers(attr, DA, DA2, new LinkedList<Integer>(), order));
       } 
-//      else {
-//        result.add(new ComparableFunctionalDependency(new HashSet<Integer>(), attr));
-//      }
     }
     
     for (ComparableFunctionalDependency dep : result) {
@@ -66,8 +62,6 @@ public class FunctionalDerpendencyAlgorithm {
   private Set<ComparableFunctionalDependency> findCovers(Integer attribute, Set<DifferenceSet> differenceSets, 
       Set<DifferenceSet> uncoveredDifferenceSets, List<Integer> path, List<Integer> ordering) {
     Set<ComparableFunctionalDependency> result = new LinkedHashSet<ComparableFunctionalDependency>();
-
-//    System.out.println(path);
     if (ordering.isEmpty() && !uncoveredDifferenceSets.isEmpty()) {
       return new LinkedHashSet<ComparableFunctionalDependency>(); // no FDs here 
     }
@@ -83,7 +77,6 @@ public class FunctionalDerpendencyAlgorithm {
           }
           result.add(new ComparableFunctionalDependency(new LinkedHashSet<Integer>(identifiers), ident));
         }
-        System.out.println("Result   size: " + result.size());
         return result;
       } else {
         return new LinkedHashSet<ComparableFunctionalDependency>(); // wasted effort,non-minimal result
@@ -92,16 +85,11 @@ public class FunctionalDerpendencyAlgorithm {
 
 //  RecursiveCase : 
     for (Integer attr : ordering) {
-//      if (attr == attribute) continue; 
       Set<DifferenceSet> nextSets = new HashSet<DifferenceSet>();
       for (DifferenceSet ds : uncoveredDifferenceSets) {
         if (covers(ds, attr))
           nextSets.add(ds);
       }
-      System.out.println(uncoveredDifferenceSets);
-
-      System.out.println("Next:");
-      System.out.println(nextSets);
       uncoveredDifferenceSets.removeAll(nextSets); //difference sets of uncoveredDifferenceSets not covered by attr;
       List<Integer> order = new ArrayList<Integer>();
       for (Integer item : ordering) {
@@ -110,7 +98,6 @@ public class FunctionalDerpendencyAlgorithm {
       path.add(attr);
       result.addAll(findCovers(attribute, differenceSets, uncoveredDifferenceSets, path, order));
     }
-    System.out.println("Resultsize: " + result.size());
     return result;
   }
 
@@ -120,9 +107,8 @@ public class FunctionalDerpendencyAlgorithm {
     DifferenceSet newSet;
     for (DifferenceSet set : diffSets) {
       newSet = (DifferenceSet) set.clone();
-      if (set.contains(attr)) {
+      if (newSet.contains(attr)) 
         newSet.remove(attr);
-      }
       if (!newSet.isEmpty())
         result.add(newSet);
     }

@@ -29,7 +29,7 @@ public class MetanomeMock {
 	public static void execute(Config conf) {
 		try {
 			FileInputGenerator inputGenerator = new DefaultFileInputGenerator(new ConfigurationSettingFileInput(
-					conf.inputFolderPath + conf.databaseName + File.separator + conf.tableNames[2] + conf.inputFileEnding, true,
+					conf.inputFolderPath + conf.databaseName + File.separator + conf.tableNames[9] + conf.inputFileEnding, true,
 					conf.inputFileSeparator, conf.inputFileQuotechar, conf.inputFileEscape, conf.inputFileStrictQuotes, 
 					conf.inputFileIgnoreLeadingWhiteSpace, conf.inputFileSkipLines, conf.inputFileHasHeader, conf.inputFileSkipDifferingLines));
 			ResultsCache resultReceiver = new ResultsCache();
