@@ -5,16 +5,25 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
+
+import de.hpi.dpdc.dubstep.detection.address.AddressDataParser;
 
 /**
  * Orchestrates the other components to perform the duplicate detection for a
  * given input and output file.
  */
 public class DubstepConductor {
+	
+	/*
+	 * Creation
+	 */
 
 	private Path input;
 	private Path output;
+	
+	private DataParser dataParser;
 	
 	/**
 	 * Private constructor. Usage {@link #forFiles(File, File)} to create a new
@@ -27,11 +36,32 @@ public class DubstepConductor {
 		this.output = output;
 	}
 	
+	/**
+	 * Create a new instance for the given input and output paths. Both paths
+	 * are validated and the output file is (re-)created. If the files cannot be
+	 * accessed or created as necessary, an {@link IOException} is thrown.
+	 * Also, set specific components for specific input files.
+	 * @param input the path to the input file
+	 * @param output the path to the output file
+	 * @return the object which can be used to perform duplicate detection on the
+	 * 	given file
+	 * @throws IOException if the files cannot be accessed
+	 */
 	public static DubstepConductor forPaths(Path input, Path output) throws IOException {
 		prepareFiles(input.toFile(), output.toFile());
-		return new DubstepConductor(input, output);
+		DubstepConductor conductor = new DubstepConductor(input, output);
+		conductor.dataParser = new AddressDataParser();
+		
+		return conductor;
 	}
 	
+	/**
+	 * Make sure that the input file exists and can be read. Delete the old
+	 * output file if necessary and create a new one. If something does not work,
+	 * an {@link IllegalArgumentException} is thrown.
+	 * @param inputFile the input file which must be existing and readable
+	 * @param outputFile the output file which will be created anew
+	 */
 	private static void prepareFiles(File inputFile, File outputFile) {
 		// check input file
 		if (!inputFile.exists()) {
@@ -58,9 +88,19 @@ public class DubstepConductor {
 		}
 	}
 	
+	/*
+	 * Execution
+	 */
+	
+	/**
+	 * Performs the duplicate detection. Reads the input file and writes results
+	 * to the output file.
+	 * @throws IOException if anything goes wrong with reading or writing
+	 */
 	public void execute() throws IOException {
-		// TODO implement
-
+		List<String> lines = Files.readAllLines(this.input, StandardCharsets.ISO_8859_1);	// TODO abstract (for the lulz)
+		List<String[]> records = this.dataParser.parse(lines.subList(0, 10));	// TODO parse whole list
+		
 	}
 	
 }
