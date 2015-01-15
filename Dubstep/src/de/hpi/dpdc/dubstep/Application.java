@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 
 import de.hpi.dpdc.dubstep.detection.DubstepConductor;
+import de.hpi.dpdc.dubstep.detection.address.AddressDataFactory;
 import de.hpi.dpdc.dubstep.midi.MidiPlayer;
 
 /**
@@ -98,7 +99,7 @@ public class Application {
 		File inputFile = new File(inputFilePath).getAbsoluteFile();
 		File outputFile = new File(inputFile.getParent() + File.separator + Application.OUTPUT_FILE_NAME);
 		
-		DubstepConductor.forPaths(inputFile.toPath(), outputFile.toPath()).execute();
+		DubstepConductor.create(inputFile.toPath(), outputFile.toPath(), AddressDataFactory.getInstance()).execute();
 	}
 	
 	/**

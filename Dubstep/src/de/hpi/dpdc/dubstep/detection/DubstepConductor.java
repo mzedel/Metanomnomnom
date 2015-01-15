@@ -2,12 +2,10 @@ package de.hpi.dpdc.dubstep.detection;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.List;
 
+import de.hpi.dpdc.dubstep.detection.address.AddressDataConverter;
 import de.hpi.dpdc.dubstep.detection.address.AddressDataParser;
 import de.hpi.dpdc.dubstep.detection.address.ISOLatin1FileReader;
 
@@ -24,8 +22,7 @@ public class DubstepConductor {
 	private Path input;
 	private Path output;
 	
-	private DataParser dataParser;
-	private DataReader dataReader;
+	private DataFactory dataFactory;
 	
 	/**
 	 * Private constructor. Usage {@link #forFiles(File, File)} to create a new
@@ -42,18 +39,19 @@ public class DubstepConductor {
 	 * Create a new instance for the given input and output paths. Both paths
 	 * are validated and the output file is (re-)created. If the files cannot be
 	 * accessed or created as necessary, an {@link IOException} is thrown.
-	 * Also, set specific components for specific input files.
+	 * The given factory will be used to deal with the input data.
 	 * @param input the path to the input file
 	 * @param output the path to the output file
 	 * @return the object which can be used to perform duplicate detection on the
 	 * 	given file
 	 * @throws IOException if the files cannot be accessed
 	 */
-	public static DubstepConductor forPaths(Path input, Path output) throws IOException {
+	public static DubstepConductor create(Path input, Path output, DataFactory dataFactory) throws IOException {
 		prepareFiles(input.toFile(), output.toFile());
+		
 		DubstepConductor conductor = new DubstepConductor(input, output);
-		conductor.dataParser = new AddressDataParser();
-		conductor.dataReader = new ISOLatin1FileReader();
+		
+		conductor.dataFactory = dataFactory;
 		
 		return conductor;
 	}
@@ -101,8 +99,11 @@ public class DubstepConductor {
 	 * @throws IOException if anything goes wrong with reading or writing
 	 */
 	public void execute() throws IOException {
-		List<String> lines = this.dataReader.read(this.input.toString());
-		List<String[]> records = this.dataParser.parse(lines.subList(0, 10));	// TODO parse whole list
+		List<String[]> records = this.dataFactory.createConverter().convert(
+				this.dataFactory.createParser().parse(
+						this.dataFactory.createReader().read(
+								this.input.toString()).subList(0, 10)));	// TODO parse all records
+		
 		records.forEach(record -> System.out.println(java.util.Arrays.toString(record)));
 	}
 	
