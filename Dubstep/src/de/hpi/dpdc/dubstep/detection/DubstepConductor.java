@@ -8,10 +8,10 @@ import java.nio.file.Path;
 import java.util.List;
 
 /**
- * Deals with I/O and stuff, thus encapsulating the actual duplicate detection
- * algorithm.
+ * Orchestrates the other components to perform the duplicate detection for a
+ * given input and output file.
  */
-public class DubstepWrapper {
+public class DubstepConductor {
 
 	private Path input;
 	private Path output;
@@ -22,14 +22,14 @@ public class DubstepWrapper {
 	 * @param input
 	 * @param output
 	 */
-	private DubstepWrapper(Path input, Path output) {
+	private DubstepConductor(Path input, Path output) {
 		this.input = input;
 		this.output = output;
 	}
 	
-	public static DubstepWrapper forPaths(Path input, Path output) throws IOException {
+	public static DubstepConductor forPaths(Path input, Path output) throws IOException {
 		prepareFiles(input.toFile(), output.toFile());
-		return new DubstepWrapper(input, output);
+		return new DubstepConductor(input, output);
 	}
 	
 	private static void prepareFiles(File inputFile, File outputFile) {
@@ -60,9 +60,7 @@ public class DubstepWrapper {
 	
 	public void execute() throws IOException {
 		// TODO implement
-		List<String> lines = Files.readAllLines(this.input, StandardCharsets.ISO_8859_1);
-		System.out.println("Lines: " + lines.size());
-		for (int i = 0; i < 10; i++) System.out.println(lines.get(i));
+
 	}
 	
 }

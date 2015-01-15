@@ -3,7 +3,7 @@ package de.hpi.dpdc.dubstep;
 import java.io.File;
 import java.io.IOException;
 
-import de.hpi.dpdc.dubstep.detection.DubstepWrapper;
+import de.hpi.dpdc.dubstep.detection.DubstepConductor;
 import de.hpi.dpdc.dubstep.midi.MidiPlayer;
 
 /**
@@ -98,7 +98,7 @@ public class Application {
 		File inputFile = new File(inputFilePath).getAbsoluteFile();
 		File outputFile = new File(inputFile.getParent() + File.separator + Application.OUTPUT_FILE_NAME);
 		
-		DubstepWrapper.forPaths(inputFile.toPath(), outputFile.toPath()).execute();
+		DubstepConductor.forPaths(inputFile.toPath(), outputFile.toPath()).execute();
 	}
 	
 	/**
