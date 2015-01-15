@@ -23,6 +23,25 @@ public class Application {
 	private final static String OUTPUT_FILE_NAME = "results.txt";
 	
 	/**
+	 * The file name of the midi file which will be played during the execution
+	 * of the duplicate detection. If the file type is omitted, ".mid" will be
+	 * presumed.
+	 */
+	private final static String MIDI_FILE_NAME = "skrillexRightIn";
+	
+	/**
+	 * The player used to play the midi.
+	 */
+	private MidiPlayer midiPlayer;
+	
+	/**
+	 * Create a new application.
+	 */
+	private Application() {
+		this.midiPlayer = new MidiPlayer();
+	}
+	
+	/**
 	 * Start both the music and the algorithm and deal with errors.
 	 * @param args program arguments, must be exactly one (input file path)
 	 */
@@ -30,8 +49,10 @@ public class Application {
 		try {
 			checkArguments(args);
 			
-			executeMidiPlayer();
+			Application application = new Application();
+			application.startMidiPlayer();
 			executeDuplicateDetection(args[0]);
+			application.stopMidiPlayer();
 		} catch (IllegalArgumentException e) {
 			exitWithMessage(e);
 		} catch (Exception e) {
@@ -53,17 +74,17 @@ public class Application {
 	}
 	
 	/**
-	 * Start the midi player in a separate thread (which is a daemon and,
-	 * therefore, does not stop the process from terminating).
+	 * Start the midi player.
 	 */
-	private static void executeMidiPlayer() {
-		Thread midiThread = new Thread() {
-			public void run() {
-				MidiPlayer.playMidi("skrillexRightIn", true);
-			}
-		};
-		midiThread.setDaemon(true);	// does not stop process termination
-		midiThread.start();
+	private void startMidiPlayer() {
+		this.midiPlayer.start(Application.MIDI_FILE_NAME, true);
+	}
+	
+	/**
+	 * Stop the midi player.
+	 */
+	private void stopMidiPlayer() {
+		this.midiPlayer.stop();
 	}
 	
 	/**
@@ -77,7 +98,7 @@ public class Application {
 		File inputFile = new File(inputFilePath).getAbsoluteFile();
 		File outputFile = new File(inputFile.getParent() + File.separator + Application.OUTPUT_FILE_NAME);
 		
-		DubstepWrapper.forFiles(inputFile, outputFile).execute();
+		DubstepWrapper.forPaths(inputFile.toPath(), outputFile.toPath()).execute();
 	}
 	
 	/**

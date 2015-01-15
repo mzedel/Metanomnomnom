@@ -1,9 +1,11 @@
 package de.hpi.dpdc.dubstep.detection;
 
 import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
-import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.List;
 
 /**
  * Deals with I/O and stuff, thus encapsulating the actual duplicate detection
@@ -11,8 +13,8 @@ import java.io.PrintWriter;
  */
 public class DubstepWrapper {
 
-	private FileReader input;
-	private PrintWriter output;
+	private Path input;
+	private Path output;
 	
 	/**
 	 * Private constructor. Usage {@link #forFiles(File, File)} to create a new
@@ -20,17 +22,13 @@ public class DubstepWrapper {
 	 * @param input
 	 * @param output
 	 */
-	private DubstepWrapper(FileReader input, PrintWriter output) {
+	private DubstepWrapper(Path input, Path output) {
 		this.input = input;
 		this.output = output;
 	}
 	
-	public static DubstepWrapper forFiles(File inputFile, File outputFile) throws IOException {
-		prepareFiles(inputFile, outputFile);
-		
-		FileReader input = new FileReader(inputFile);
-		PrintWriter output = new PrintWriter(outputFile);
-		
+	public static DubstepWrapper forPaths(Path input, Path output) throws IOException {
+		prepareFiles(input.toFile(), output.toFile());
 		return new DubstepWrapper(input, output);
 	}
 	
@@ -43,7 +41,7 @@ public class DubstepWrapper {
 		}
 
 		// attempt to create output file (delete existing, if necessary)
-		if (!outputFile.exists()) {
+		if (outputFile.exists()) {
 			boolean wasDeleted = outputFile.delete();
 			if (!wasDeleted) {
 				throw new IllegalArgumentException("Cannot delete existing output file.");
@@ -62,10 +60,9 @@ public class DubstepWrapper {
 	
 	public void execute() throws IOException {
 		// TODO implement
-		
-		this.input.close();
-		this.output.flush();
-		this.output.close();
+		List<String> lines = Files.readAllLines(this.input, StandardCharsets.ISO_8859_1);
+		System.out.println("Lines: " + lines.size());
+		for (int i = 0; i < 10; i++) System.out.println(lines.get(i));
 	}
 	
 }
