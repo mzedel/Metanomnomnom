@@ -7,7 +7,7 @@ import java.util.StringTokenizer;
 import de.hpi.dpdc.dubstep.detection.DataParser;
 
 /**
- * Specific parser to deal with address.csv.
+ * Specific parser to deal with addresses.csv.
  */
 public class AddressDataParser implements DataParser {
 

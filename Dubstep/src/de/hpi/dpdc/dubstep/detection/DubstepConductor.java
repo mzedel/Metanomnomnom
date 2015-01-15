@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import de.hpi.dpdc.dubstep.detection.address.AddressDataParser;
+import de.hpi.dpdc.dubstep.detection.address.ISOLatin1FileReader;
 
 /**
  * Orchestrates the other components to perform the duplicate detection for a
@@ -24,6 +25,7 @@ public class DubstepConductor {
 	private Path output;
 	
 	private DataParser dataParser;
+	private DataReader dataReader;
 	
 	/**
 	 * Private constructor. Usage {@link #forFiles(File, File)} to create a new
@@ -51,6 +53,7 @@ public class DubstepConductor {
 		prepareFiles(input.toFile(), output.toFile());
 		DubstepConductor conductor = new DubstepConductor(input, output);
 		conductor.dataParser = new AddressDataParser();
+		conductor.dataReader = new ISOLatin1FileReader();
 		
 		return conductor;
 	}
@@ -98,9 +101,9 @@ public class DubstepConductor {
 	 * @throws IOException if anything goes wrong with reading or writing
 	 */
 	public void execute() throws IOException {
-		List<String> lines = Files.readAllLines(this.input, StandardCharsets.ISO_8859_1);	// TODO abstract (for the lulz)
+		List<String> lines = this.dataReader.read(this.input.toString());
 		List<String[]> records = this.dataParser.parse(lines.subList(0, 10));	// TODO parse whole list
-		
+		records.forEach(record -> System.out.println(java.util.Arrays.toString(record)));
 	}
 	
 }
