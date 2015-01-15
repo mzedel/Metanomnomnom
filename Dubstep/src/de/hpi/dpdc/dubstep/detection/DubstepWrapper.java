@@ -5,11 +5,21 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 
+/**
+ * Deals with I/O and stuff, thus encapsulating the actual duplicate detection
+ * algorithm.
+ */
 public class DubstepWrapper {
 
 	private FileReader input;
 	private PrintWriter output;
 	
+	/**
+	 * Private constructor. Usage {@link #forFiles(File, File)} to create a new
+	 * instance.
+	 * @param input
+	 * @param output
+	 */
 	private DubstepWrapper(FileReader input, PrintWriter output) {
 		this.input = input;
 		this.output = output;
@@ -25,25 +35,29 @@ public class DubstepWrapper {
 	}
 	
 	private static void prepareFiles(File inputFile, File outputFile) {
-		String error = null;
-		
-		// check if input file can be read
-		if (!inputFile.exists()) error = "Input File does not exist.";
-		if (!inputFile.canRead()) error = "Cannot read input file.";
+		// check input file
+		if (!inputFile.exists()) {
+			throw new IllegalArgumentException("Input File does not exist.");
+		} else if (!inputFile.canRead()) {
+			throw new IllegalArgumentException("Cannot read input file.");
+		}
+
 		// attempt to create output file (delete existing, if necessary)
 		if (!outputFile.exists()) {
 			boolean wasDeleted = outputFile.delete();
-			if (!wasDeleted) error = "Cannot delete existing output file.";
+			if (!wasDeleted) {
+				throw new IllegalArgumentException("Cannot delete existing output file.");
+			}
 		}
 		boolean wasCreated = false;
 		try {
 			wasCreated = outputFile.createNewFile();
 		} catch (IOException e) {
-			// wasCreated is still false
+			// "wasCreated" is still false
 		}
-		if (!wasCreated) error = "Cannot create output file.";
-		
-		if (error != null) throw new IllegalArgumentException(error);
+		if (!wasCreated) {
+			throw new IllegalArgumentException("Cannot create output file.");
+		}
 	}
 	
 	public void execute() throws IOException {
