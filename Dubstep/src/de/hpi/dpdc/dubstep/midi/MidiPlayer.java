@@ -65,10 +65,10 @@ public final class MidiPlayer {
 	 * Stop playing the midi.
 	 */
 	public void stop() {
-		if (this.sequencer.isRunning()) {
+		if (this.sequencer != null && this.sequencer.isRunning()) {
 			this.sequencer.stop();
 		}
-		if (this.sequencer.isOpen()) {
+		if (this.sequencer != null && this.sequencer.isOpen()) {
 			this.sequencer.close();
 		}
 	}

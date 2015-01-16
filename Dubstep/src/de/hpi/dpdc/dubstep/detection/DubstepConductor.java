@@ -5,10 +5,6 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 
-import de.hpi.dpdc.dubstep.detection.address.AddressDataConverter;
-import de.hpi.dpdc.dubstep.detection.address.AddressDataParser;
-import de.hpi.dpdc.dubstep.detection.address.ISOLatin1FileReader;
-
 /**
  * Orchestrates the other components to perform the duplicate detection for a
  * given input and output file.
@@ -102,7 +98,7 @@ public class DubstepConductor {
 		List<String[]> records = this.dataFactory.createConverter().convert(
 				this.dataFactory.createParser().parse(
 						this.dataFactory.createReader().read(
-								this.input.toString()).subList(0, 10)));	// TODO parse all records
+								this.input.toString()).subList(0, 160)));	// TODO parse all records
 		
 		records.forEach(record -> System.out.println(java.util.Arrays.toString(record)));
 	}
