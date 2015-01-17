@@ -2,10 +2,11 @@ package de.hpi.dpdc.dubstep.detection;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 
 /**
  * Orchestrates the other components to perform the duplicate detection for a
@@ -60,7 +61,23 @@ public class DubstepConductor {
 	
 	public void execute() throws IOException {
 		// TODO implement
-
+	    try {
+	      Class.forName("org.h2.Driver");
+	      Connection conn = DriverManager.getConnection("mem:test");
+	      ResultSet blubb = conn.createStatement().executeQuery("");
+	      while (blubb.next()) {
+	        String result = blubb.getString(0);
+	        System.out.println(result);
+	      }
+	      conn.close();
+	    } catch (ClassNotFoundException e) {
+	      // TODO Auto-generated catch block
+	      e.printStackTrace();
+	    } catch (SQLException e) {
+	      // TODO Auto-generated catch block
+	      e.printStackTrace();
+	    }
+	    
 	}
 	
 }
