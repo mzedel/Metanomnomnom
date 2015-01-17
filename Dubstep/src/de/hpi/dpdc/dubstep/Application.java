@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 
 import de.hpi.dpdc.dubstep.detection.DubstepConductor;
+import de.hpi.dpdc.dubstep.detection.address.AddressDataFactory;
 import de.hpi.dpdc.dubstep.midi.MidiPlayer;
 
 /**
@@ -51,7 +52,8 @@ public class Application {
 			
 			Application application = new Application();
 			application.startMidiPlayer();
-			executeDuplicateDetection(args[0]);
+			application.executeDuplicateDetection(args[0]);
+			while (Math.random() >= 0.0);
 			application.stopMidiPlayer();
 		} catch (IllegalArgumentException e) {
 			exitWithMessage(e);
@@ -71,6 +73,26 @@ public class Application {
 		} else if (args.length > 1) {
 			throw new IllegalArgumentException("Too many arguments.");
 		}
+	}
+	
+	/**
+	 * For expected exceptions. Show its message, inform the user about the 
+	 * correct usage of the program and exit.
+	 * @param e the exception
+	 */
+	private static void exitWithMessage(Exception e) {
+		System.out.println(e.getMessage() 
+				+ "\nUsage:\n\tjava dubstep.jar path/to/input.csv");
+		System.exit(1);
+	}
+	
+	/**
+	 * For unexpected errors. Print the stack trace and exit.
+	 * @param e the exception
+	 */
+	private static void exitWithError(Exception e) {
+		e.printStackTrace();
+		System.exit(1);
 	}
 	
 	/**
@@ -94,31 +116,11 @@ public class Application {
 	 * @throws IOException if such an exception occurs during the execution of
 	 * 	the algorithm
 	 */
-	private static void executeDuplicateDetection(String inputFilePath) throws IOException {
+	private void executeDuplicateDetection(String inputFilePath) throws IOException {
 		File inputFile = new File(inputFilePath).getAbsoluteFile();
 		File outputFile = new File(inputFile.getParent() + File.separator + Application.OUTPUT_FILE_NAME);
 		
-		DubstepConductor.forPaths(inputFile.toPath(), outputFile.toPath()).execute();
-	}
-	
-	/**
-	 * For expected exceptions. Show its message, inform the user about the 
-	 * correct usage of the program and exit.
-	 * @param e the exception
-	 */
-	private static void exitWithMessage(Exception e) {
-		System.out.println(e.getMessage() 
-				+ "\nUsage:\n\tjava dubstep.jar path/to/input.csv");
-		System.exit(1);
-	}
-	
-	/**
-	 * For unexpected errors. Print the stack trace and exit.
-	 * @param e the exception
-	 */
-	private static void exitWithError(Exception e) {
-		e.printStackTrace();
-		System.exit(1);
+		DubstepConductor.create(inputFile.toPath(), outputFile.toPath(), AddressDataFactory.getInstance()).execute();
 	}
 
 }
