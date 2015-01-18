@@ -3,11 +3,12 @@ package de.hpi.dpdc.dubstep.detection;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.List;
+
+import org.hibernate.Session;
+
+import de.hpi.dpdc.dubstep.detection.address.Address;
+import de.hpi.dpdc.dubstep.utils.HibernateUtil;
 
 /**
  * Orchestrates the other components to perform the duplicate detection for a
@@ -100,29 +101,28 @@ public class DubstepConductor {
 	 */
 	public void execute() throws IOException {
 		// TODO implement
-	    try {
-	      Class.forName("org.h2.Driver");
-	      Connection conn = DriverManager.getConnection("mem:test");
-	      ResultSet blubb = conn.createStatement().executeQuery("");
-	      while (blubb.next()) {
-	        String result = blubb.getString(0);
-	        System.out.println(result);
-	      }
-	      conn.close();
-	    } catch (ClassNotFoundException e) {
-	      // TODO Auto-generated catch block
-	      e.printStackTrace();
-	    } catch (SQLException e) {
-	      // TODO Auto-generated catch block
-	      e.printStackTrace();
-	    }
 	    
 		List<String[]> records = this.dataFactory.createConverter().convert(
 				this.dataFactory.createParser().parse(
 						this.dataFactory.createReader().read(
 								this.input.toString()).subList(0, 160)));	// TODO parse all records
 		
+		addRecordsToDatabase(records);
+		
 		records.forEach(record -> System.out.println(java.util.Arrays.toString(record)));
+		
+		HibernateUtil.getSessionFactory().close();
 	}
-	
+
+  private void addRecordsToDatabase(List<String[]> records) {
+    Session session = HibernateUtil.getSessionFactory().openSession();
+    
+    session.beginTransaction();
+    for (String[] strings : records) {
+      Address address = new Address(strings);
+      session.persist(address);
+    }
+    session.getTransaction().commit(); 
+    session.close();
+  }
 }
