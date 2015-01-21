@@ -166,7 +166,7 @@ public class AddressDataConverter implements DataConverter {
 	 * @return the resulting string, can be <tt>null</tt>
 	 */
 	private String copyTrimmed(String string) {
-		String copy = string != null ? string.trim().replaceAll("\"", "") : null;
+		String copy = string != null ? string.trim().replaceAll("\"", "") : null; // might also strip off leading and trailing .:*-; etc.
 		return !"".equals(copy) ? copy : null;
 	}
 	

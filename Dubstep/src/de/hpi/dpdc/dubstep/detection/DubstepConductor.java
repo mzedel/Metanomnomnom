@@ -3,10 +3,15 @@ package de.hpi.dpdc.dubstep.detection;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 
 import org.hibernate.Session;
+import org.hibernate.criterion.Order;
+import org.hibernate.criterion.Property;
 
+import slib.sml.sm.core.measures.string.LevenshteinDistance;
 import de.hpi.dpdc.dubstep.detection.address.Address;
 import de.hpi.dpdc.dubstep.utils.HibernateUtil;
 
@@ -108,15 +113,36 @@ public class DubstepConductor {
 								this.input.toString()).subList(0, 160)));	// TODO parse all records
 		
 		addRecordsToDatabase(records);
-		
+		sortRecords();
 		records.forEach(record -> System.out.println(java.util.Arrays.toString(record)));
 		
 		HibernateUtil.getSessionFactory().close();
 	}
 
+  private void sortRecords() {
+    Session session = HibernateUtil.getSessionFactory().openSession();
+    session.beginTransaction();
+//    Query query = session.createQuery("FROM adresses adress ORDERBY LastName");
+    Property lastName = Property.forName("LastName");
+    List<Address> result = session.createCriteria(Address.class)
+                                  .add(lastName.isNotNull())
+                                  .addOrder(Order.asc("LastName")).list();
+    LevenshteinDistance levenshtein = new LevenshteinDistance(true); // true as in: normalize
+    LinkedList<LinkedList<Address>> equivalenceClasses = new LinkedList<LinkedList<Address>>();
+    for(Iterator<Address> it = result.iterator(); it.hasNext();) {
+      Address address = it.next();
+      for (LinkedList<Address> list : equivalenceClasses) {
+        String name = list.getFirst().LastName;
+        if (name.equals(address.LastName) || levenshtein.distance(name, address.LastName) < 0.8)
+          addDuplicate(address, list);
+      }
+    }
+    session.getTransaction().commit();
+    session.close();
+  }
+
   private void addRecordsToDatabase(List<String[]> records) {
     Session session = HibernateUtil.getSessionFactory().openSession();
-    
     session.beginTransaction();
     for (String[] strings : records) {
       Address address = new Address(strings);
@@ -124,5 +150,14 @@ public class DubstepConductor {
     }
     session.getTransaction().commit(); 
     session.close();
+  }
+  
+  private LinkedList<Address> addDuplicate(Address item, LinkedList<Address> equivalentItems) {
+    if (item.SetAttributeCount > equivalentItems.get(0).SetAttributeCount)
+      equivalentItems.add(0, item);
+    else {
+      equivalentItems.add(item);
+    }
+    return equivalentItems;
   }
 }

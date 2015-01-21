@@ -16,7 +16,7 @@ public class HibernateUtil {
     Configuration config = new Configuration()
       .addAnnotatedClass(Address.class)
       .setProperty("hibernate.dialect", "org.hibernate.dialect.H2Dialect")
-      .setProperty("hibernate.connection.url", "jdbc:h2:mem:test;DB_CLOSE_DELAY=-1")
+      .setProperty("hibernate.connection.url", "jdbc:h2:~/data;DB_CLOSE_DELAY=-1")
       .setProperty("hibernate.current_session_context_class", "thread")
       .setProperty("hibernate.show_sql", "true")
       .setProperty("hibernate.hbm2ddl.auto", "create");

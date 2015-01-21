@@ -57,6 +57,8 @@ public class Address {
   
   public String WhatEver4;
   
+  public int SetAttributeCount = 0;
+  
   public Address() {
     super();
   }
@@ -85,5 +87,9 @@ public class Address {
     this.WhatEver1 = rawAdress[13];
     this.WhatEver2 = rawAdress[14];
     this.WhatEver3 = rawAdress[15];
+    for (String item : rawAdress) {
+      if(item != null && !item.isEmpty())
+        this.SetAttributeCount++;
+    }
   }
 }
