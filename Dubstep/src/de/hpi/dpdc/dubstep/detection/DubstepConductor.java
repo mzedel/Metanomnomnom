@@ -106,17 +106,16 @@ public class DubstepConductor {
 	 */
 	public void execute() throws IOException {
 		// TODO implement
-	    
 		List<String[]> records = this.dataFactory.createConverter().convert(
 				this.dataFactory.createParser().parse(
 						this.dataFactory.createReader().read(
-								this.input.toString()).subList(0, 160)));	// TODO parse all records
+								this.input.toString()).subList(0, 200)));	// TODO parse all records
 		
 		addRecordsToDatabase(records);
 		sortRecords();
 		records.forEach(record -> System.out.println(java.util.Arrays.toString(record)));
 		
-		HibernateUtil.getSessionFactory().close();
+		HibernateUtil.shutdown();
 	}
 
   private void sortRecords() {

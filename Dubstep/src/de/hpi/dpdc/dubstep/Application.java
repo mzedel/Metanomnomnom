@@ -53,7 +53,6 @@ public class Application {
 			Application application = new Application();
 			application.startMidiPlayer();
 			application.executeDuplicateDetection(args[0]);
-			while (Math.random() >= 0.0);
 			application.stopMidiPlayer();
 		} catch (IllegalArgumentException e) {
 			exitWithMessage(e);

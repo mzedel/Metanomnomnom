@@ -18,7 +18,9 @@ public class AddressDataConverter implements DataConverter {
 	 *  2: Academic title
 	 *  3: First name
 	 *  4: Last name
-	 *  5: Birth date
+	 *  5: Birth year
+	 *  6: Birth month
+	 *  7: Birth day
 	 *  6: Street
 	 *  7: House number
 	 *  8: Postal code
@@ -61,19 +63,35 @@ public class AddressDataConverter implements DataConverter {
 		// do not change the ID
 		convertedRecord[0] = copyTrimmed(record[0]);
 		
-		// TODO split records for "Herr und Frau" / "Frau und Herr"
+		// gender-specific address
 		convertedRecord[1] = copyTrimmed(record[1]);
 		
 		// do not change the academic title
 		convertedRecord[2] = copyTrimmed(record[2]);
 		
-		// TODO deal with first names (e.g. abbreviations, double names, "eSvn.")
-		convertedRecord[3] = copyTrimmed(record[3]);
+		// first names
+		String firstName = copyTrimmed(record[3]);
+		// change "eSvn." to "Sven." - the structure of these cases always seem to be the same
+		if (firstName != null && firstName.length() >= 2 && Character.isUpperCase(firstName.charAt(1))) {
+			firstName = firstName.substring(1, firstName.length() >= 3 ? 3 : 2)
+					.concat(firstName.substring(0, 1))
+					.concat(firstName.length() >= 4 ? (firstName.substring(3)) : "");
+		}
+		convertedRecord[3] = firstName;
 		
-		// TODO deal with last names (e.g. remove everything after more than one space)
-		convertedRecord[4] = copyTrimmed(record[4]);
+		// last names
+		String lastName = copyTrimmed(record[4]);
+		// remove everything after more than one space (e.g. "                    ibn")
+		if (lastName != null) {
+			int crapIndex = lastName.indexOf("  ");
+			if (crapIndex != -1) {
+				lastName = lastName.substring(0, crapIndex);
+			}
+		}
 		
-		// extract the year from the date of birth
+		convertedRecord[4] = lastName;
+		
+		// normalize the date of birth
 		String rawDate = copyTrimmed(record[5]);
 		String rawDay = "";
 		String rawMonth = "";
@@ -83,8 +101,9 @@ public class AddressDataConverter implements DataConverter {
 			    rawDay = rawDate.substring(0, 2);
 	            rawMonth = rawDate.substring(3, 5);
 				rawDate = rawDate.substring(rawDate.length() - 4);
-				if (rawDate.startsWith("20"))
-				  rawDate = "19" + rawDate.substring(2);
+				if (rawDate.startsWith("20")) {
+					rawDate = "19" + rawDate.substring(2);
+				}
 			} else if (rawDate.contains("/")) {
 				// ??/??/yy
                 rawMonth = rawDate.substring(0, 2);
@@ -97,15 +116,19 @@ public class AddressDataConverter implements DataConverter {
 				rawDate = rawDate.substring(0, 4);
 			}
 			try {
-				// make sure that it is a number at least
+				// check the format
 				Integer.parseInt(rawDate);
-				if (Integer.parseInt(rawMonth) > 12) {
+				int monthNumber = Integer.parseInt(rawMonth);
+				Integer.parseInt(rawDay);
+				
+				// position of month vs. day
+				if (monthNumber > 12) {
 				  String temp = rawMonth;
 				  rawMonth = rawDay;
 				  rawDay = temp;
 				}
 				  
-				// store the year
+				// store the date
 				convertedRecord[5] = rawDate;
 				convertedRecord[6] = rawMonth;
 				convertedRecord[7] = rawDay;
@@ -118,11 +141,37 @@ public class AddressDataConverter implements DataConverter {
 		    convertedRecord[5] = convertedRecord[6] = convertedRecord[7] = null;
 		}
 		
-		// TODO deal with streets (extract house number, normalize abbreviations)
-		convertedRecord[8] = copyTrimmed(record[6]);
+		// streets
+		String street = copyTrimmed(record[6]);
+		String houseNumber = null;
+		if (street != null) {
+			// extract house number
+			int lastBlankIndex = street.lastIndexOf(" ");
+			if (lastBlankIndex != -1) {
+				if (street.length() > lastBlankIndex + 1) {
+					String potentialNumber = street.substring(lastBlankIndex + 1);
+					if (Character.isDigit(potentialNumber.charAt(0))) {
+						// assume that the substring is a house number
+						street = street.substring(0, lastBlankIndex);
+						houseNumber = potentialNumber;
+					}
+				}
+				
+			}
+			// normalize abbreviations
+			street = street.replaceAll("strasse", "str.")
+					.replaceAll("straﬂe", "str.")
+					.replaceAll("Strasse", "Str.")
+					.replaceAll("Straﬂe", "Str.");
+		}
+		convertedRecord[8] = street;
 		
 		// normalize house numbers (to lower case)
 		convertedRecord[9] = copyTrimmed(record[7]);
+		if (convertedRecord[9] == null) {
+			// if there is no house number, use the number extracted from the street (may also be null)
+			convertedRecord[9] = houseNumber;
+		}
 		if (convertedRecord[9] != null) {
 			convertedRecord[9] = convertedRecord[9].toLowerCase();
 		}
@@ -149,7 +198,7 @@ public class AddressDataConverter implements DataConverter {
 		// ignore unknown and rare data
 		convertedRecord[13] = null;
 		
-		// keep whatever number that is
+		// keep whatever number that is, for it is almost always there
 		convertedRecord[14] = copyTrimmed(record[12]);
 		
 		// ignore unknown and rare data
