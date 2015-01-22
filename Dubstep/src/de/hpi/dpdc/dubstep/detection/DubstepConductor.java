@@ -12,7 +12,9 @@ import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
+import slib.sml.sm.core.measures.string.LevenshteinDistance;
 import de.hpi.dpdc.dubstep.detection.address.Address;
+import de.hpi.dpdc.dubstep.detection.address.AddressAnalysisPipeline;
 
 /**
  * Orchestrates the other components to perform the duplicate detection for a
@@ -241,9 +243,6 @@ public class DubstepConductor {
 	private void findDuplicates(Map<String, List<Address>> blocks) throws IOException {
 		// prepare sorted set of output strings ("id1,id2")
 		SortedSet<Duplicate> duplicates = new TreeSet<Duplicate>();
-		for (List<Address> equivalenceClass : classes) {
-		    
-		}
 		
 		// TODO find duplicates
 		Address address1, address2;
@@ -279,7 +278,16 @@ public class DubstepConductor {
 	 * 	<tt>false</tt> otherwise
 	 */
 	private boolean isDuplicate(Address address1, Address address2) {
-		// TODO implement
+	    	LevenshteinDistance levenshtein = new LevenshteinDistance(true);
+          	if (levenshtein.distance(address1.lastName, address2.lastName) < 0.1) {
+          	    if (levenshtein.distance(address1.firstName, address2.firstName) < 0.1) {
+          		if (levenshtein.distance(address1.city, address2.city) < 0.1) {
+          		    if (levenshtein.distance(address1.streetName, address2.streetName) < 0.1) {
+          			return true;
+          		    }
+          		}
+          	    }
+          	}
 		return false;
 	}
 	
