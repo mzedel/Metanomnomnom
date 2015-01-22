@@ -6,17 +6,18 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
+import org.hibernate.Criteria;
+import org.hibernate.Query;
 import org.hibernate.Session;
-import org.hibernate.criterion.Order;
+import org.hibernate.criterion.Projections;
 import org.hibernate.criterion.Property;
+import org.hibernate.criterion.Restrictions;
 
-import slib.sml.sm.core.measures.string.LevenshteinDistance;
 import de.hpi.dpdc.dubstep.detection.address.Address;
 import de.hpi.dpdc.dubstep.utils.HibernateUtil;
 
@@ -138,7 +139,7 @@ public class DubstepConductor {
 		timeNow = System.nanoTime();
 		
 		// sort and get equivalence classes
-		LinkedList<LinkedList<Address>> equivalenceClasses = this.sortAndGroupRecords();
+		List<List<Address>> equivalenceClasses = this.sortAndGroupRecords();
 		System.out.println("Sorting and blocking: " + ((System.nanoTime() - timeNow) / 1000000) + "ms");
 		timeNow = System.nanoTime();
 		
@@ -177,33 +178,29 @@ public class DubstepConductor {
 	}
 
 	@SuppressWarnings("unchecked")
-	private LinkedList<LinkedList<Address>> sortAndGroupRecords() {
+	private List<List<Address>> sortAndGroupRecords() {
 		Session session = HibernateUtil.getSessionFactory().openSession();
 		session.beginTransaction();
 		//    Query query = session.createQuery("FROM adresses adress ORDERBY LastName");
-		Property lastName = Property.forName("LastName");
-		List<Address> result = session.createCriteria(Address.class)
-				.add(lastName.isNotNull())
-				.addOrder(Order.asc("LastName")).list();
-		LevenshteinDistance levenshtein = new LevenshteinDistance(true); // true as in: normalize
-		LinkedList<LinkedList<Address>> equivalenceClasses = new LinkedList<LinkedList<Address>>();
-		for(Iterator<Address> it = result.iterator(); it.hasNext();) {
-			Address address = it.next();
-			boolean found = false;
-			for (LinkedList<Address> list : equivalenceClasses) {
-				String name = list.getFirst().LastName;
-				if (name.equals(address.LastName) || levenshtein.distance(name, address.LastName) < 0.2) {
-					addDuplicate(address, list);
-					found = true;
-				}
-			}
-			if (!found) {
-			    LinkedList<Address> addresses = new LinkedList<Address>();
-			    addresses.add(address);
-			    equivalenceClasses.add(addresses);
-			}
+
+		Property key = Property.forName("Key");
+		
+		List<String> count = session.createCriteria(Address.class).setProjection(
+			Projections.projectionList().add( 
+				Projections.distinct(
+					Projections.projectionList() 
+						.add(Projections.property(key.getPropertyName()))
+				)
+			)
+		).list();
+		System.out.println(count.size());
+		List<List<Address>> equivalenceClasses = new ArrayList<List<Address>>();
+		Criteria cr = session.createCriteria(Address.class);
+		for (String string : count) {
+		    cr.add(Restrictions.eq("Key", string));
+		    equivalenceClasses.add(cr.list());
 		}
-		System.out.println("Equivalence classes found:" + equivalenceClasses.size() + " from #records " + result.size());
+		System.out.println("Equivalence classes found:" + equivalenceClasses.size());
 		session.getTransaction().commit();
 		session.close();
 		
@@ -219,15 +216,6 @@ public class DubstepConductor {
 		}
 		session.getTransaction().commit(); 
 		session.close();
-	}
-
-	private LinkedList<Address> addDuplicate(Address item, LinkedList<Address> equivalentItems) {
-		if (item.SetAttributeCount > equivalentItems.get(0).SetAttributeCount)
-			equivalentItems.add(0, item);
-		else {
-			equivalentItems.add(item);
-		}
-		return equivalentItems;
 	}
 	
 	/**
@@ -274,7 +262,7 @@ public class DubstepConductor {
 	 * @param classes the blocks of records
 	 * @throws IOException if the writing fails
 	 */
-	private void findDuplicates(LinkedList<LinkedList<Address>> classes) throws IOException {
+	private void findDuplicates(List<List<Address>> classes) throws IOException {
 		// prepare sorted set of output strings ("id1,id2")
 		SortedSet<Duplicate> duplicates = new TreeSet<Duplicate>();
 		
