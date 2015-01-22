@@ -25,6 +25,13 @@
       </plugin>
     </plugins>
   </build>
+  <repositories>
+	<repository>
+	      <id>Simmetrics</id>
+	      <name>Simmetrics repo</name>
+	      <url>https://bitbucket.org/Nickmancol/simmetrics/raw/tip/mavenRepo/releases/</url>
+	 </repository>
+  </repositories>
   <dependencies>
 	<dependency>
 		<groupId>org.hibernate</groupId>
@@ -56,10 +63,11 @@
       <artifactId>h2</artifactId>
       <version>1.4.184</version>
     </dependency>
-    <dependency>
-      <groupId>com.github.sharispe</groupId>
-      <artifactId>slib-sml</artifactId>
-      <version>0.9.1</version>
-    </dependency>
+	<dependency> 
+             <groupId>org.simmetrics</groupId> 
+             <artifactId>simmetrics</artifactId> 
+             <version>1.6.2</version> 
+         </dependency> 
+
   </dependencies>
 </project>

@@ -13,7 +13,9 @@ import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
-import slib.sml.sm.core.measures.string.LevenshteinDistance;
+import uk.ac.shef.wit.simmetrics.similaritymetrics.AbstractStringMetric;
+import uk.ac.shef.wit.simmetrics.similaritymetrics.Levenshtein;
+import uk.ac.shef.wit.simmetrics.similaritymetrics.Soundex;
 import de.hpi.dpdc.dubstep.detection.address.Address;
 
 /**
@@ -296,16 +298,21 @@ public class DubstepConductor {
 	 * 	<tt>false</tt> otherwise
 	 */
 	private boolean isDuplicate(Address address1, Address address2) {
-	    	LevenshteinDistance levenshtein = new LevenshteinDistance(true);
-          	if (levenshtein.distance(address1.lastName, address2.lastName) < 0.1) {
-          	    if (levenshtein.distance(address1.firstName, address2.firstName) < 0.1) {
-          		if (levenshtein.distance(address1.city, address2.city) < 0.1) {
-          		    if (levenshtein.distance(address1.streetName, address2.streetName) < 0.1) {
+	    	AbstractStringMetric metric = new Levenshtein();
+//            AbstractStringMetric metric = new CosineSimilarity();
+//            AbstractStringMetric metric = new EuclideanDistance();
+//            AbstractStringMetric metric = new MongeElkan();	
+	    
+          	if (metric.getSimilarity(address1.lastName, address2.lastName) < 0.1) {
+          	    if (metric.getSimilarity(address1.firstName, address2.firstName) < 0.1) {
+          		if (metric.getSimilarity(address1.city, address2.city) < 0.1) {
+          		    if (metric.getSimilarity(address1.streetName, address2.streetName) < 0.1) {
           			return true;
           		    }
           		}
           	    }
           	}
+          	metric = new Soundex();
 		return false;
 	}
 	
