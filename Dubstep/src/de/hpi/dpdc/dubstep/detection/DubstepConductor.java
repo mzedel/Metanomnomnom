@@ -173,20 +173,22 @@ public class DubstepConductor {
 		Session session = HibernateUtil.getSessionFactory().openSession();
 		session.beginTransaction();
 		//    Query query = session.createQuery("FROM adresses adress ORDERBY LastName");
-		Property lastName = Property.forName("LastName");
+		Property lastName = Property.forName("Key");
 		List<Address> result = session.createCriteria(Address.class)
-				.add(lastName.isNotNull())
-				.addOrder(Order.asc("LastName")).list();
+//				.add(lastName.isNotNull())
+				.addOrder(Order.asc("Key")).list();
 		LevenshteinDistance levenshtein = new LevenshteinDistance(true); // true as in: normalize
 		LinkedList<LinkedList<Address>> equivalenceClasses = new LinkedList<LinkedList<Address>>();
 		for(Iterator<Address> it = result.iterator(); it.hasNext();) {
 			Address address = it.next();
+			String addressKey = address.Key.substring(address.Key.indexOf(":"));
 			boolean found = false;
 			for (LinkedList<Address> list : equivalenceClasses) {
-				String name = list.getFirst().LastName;
-				if (name.equals(address.LastName) || levenshtein.distance(name, address.LastName) < 0.2) {
+				String name = list.getFirst().Key.substring(list.getFirst().Key.indexOf(":"));
+				if (name.equals(address.Key) || levenshtein.distance(name, addressKey) < 0.2) {
 					addDuplicate(address, list);
 					found = true;
+					break;
 				}
 			}
 			if (!found) {

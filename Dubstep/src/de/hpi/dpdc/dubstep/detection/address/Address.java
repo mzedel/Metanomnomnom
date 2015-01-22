@@ -15,7 +15,8 @@ import javax.persistence.Table;
 @Entity
 @Table(name = "adresses",
        indexes = {@Index(name = "last_name_index",  columnList="LastName", unique = false),
-                  @Index(name = "first_name_index",  columnList="FirstName", unique = false)})
+                  @Index(name = "first_name_index",  columnList="FirstName", unique = false),
+                  @Index(name = "key_index",  columnList="Key", unique = false)})
 public class Address {
   
   // do not change the ID
@@ -62,6 +63,8 @@ public class Address {
   
   public int SetAttributeCount = 0;
   
+  public String Key;
+  
   public Address() {
     super();
   }
@@ -93,5 +96,9 @@ public class Address {
       if(item != null && !item.isEmpty())
         this.SetAttributeCount++;
     }
+    if (this.PostalCode != null && this.LastName != null)
+    this.Key = this.PostalCode.substring(0, Math.min(this.PostalCode.length(), 3))
+		+ ":"
+    		+ this.LastName.substring(0, Math.min(this.LastName.length(), 4));
   }
 }
