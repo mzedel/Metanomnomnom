@@ -52,7 +52,9 @@ public class AddressDataConverter implements DataConverter {
 	
 	/**
 	 * Convert the given record. If the record is to be discarded, <tt>null</tt>
-	 * is returned.
+	 * is returned. If the record is to be split (as multiple instances are
+	 * represented), the resulting array's length is a multitude of the normal
+	 * length, and all records share the same ID.
 	 * @param record the record
 	 * @return the converted record or <tt>null</tt>, if the record shall be
 	 * 	discarded
@@ -63,7 +65,7 @@ public class AddressDataConverter implements DataConverter {
 		// do not change the ID
 		convertedRecord[0] = copyTrimmed(record[0]);
 		
-		// gender-specific address
+		// do not change the gender-specific address
 		convertedRecord[1] = copyTrimmed(record[1]);
 		
 		// do not change the academic title
@@ -204,6 +206,30 @@ public class AddressDataConverter implements DataConverter {
 		// ignore unknown and rare data
 		convertedRecord[15] = null;
 		
+		/*
+		 * Check for multiple records
+		 */
+		// check first names (" u. ", " und ", " & ")
+		firstName = convertedRecord[3];
+		final int recordLength = convertedRecord.length;
+		if (firstName != null) {
+			for (String pattern : new String[] {" u. ", " und ", " & "}) {
+				String[] firstNames = firstName.split(pattern);
+				if (firstNames.length > 1) {
+					// create two records
+					String[] doubleRecord = new String[recordLength * 2];
+					
+					System.arraycopy(convertedRecord, 0, doubleRecord, 0, recordLength);
+					System.arraycopy(convertedRecord, 0, doubleRecord, recordLength, recordLength);
+					doubleRecord[3] = firstNames[0];
+					doubleRecord[3 + recordLength] = firstNames[1];
+					
+					convertedRecord = doubleRecord;
+					break;
+				}
+			}
+		}
+		
 		return convertedRecord;
 	}
 	
@@ -215,7 +241,7 @@ public class AddressDataConverter implements DataConverter {
 	 * @return the resulting string, can be <tt>null</tt>
 	 */
 	private String copyTrimmed(String string) {
-		String copy = string != null ? string.trim().replaceAll("\"", "") : null; // might also strip off leading and trailing .:*-; etc.
+		String copy = string != null ? string.toLowerCase().trim().replaceAll("\"", "") : null; // might also strip off leading and trailing .:*-; etc.
 		return !"".equals(copy) ? copy : null;
 	}
 	

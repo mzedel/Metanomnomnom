@@ -3,6 +3,7 @@ package de.hpi.dpdc.dubstep.detection;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -105,58 +106,87 @@ public class DubstepConductor {
 	 * @throws IOException if anything goes wrong with reading or writing
 	 */
 	public void execute() throws IOException {
-		// TODO implement
+		// read, parse, convert data
 		List<String[]> records = this.dataFactory.createConverter().convert(
 				this.dataFactory.createParser().parse(
 						this.dataFactory.createReader().read(
 								this.input.toString()).subList(0, 200)));	// TODO parse all records
 		
-		addRecordsToDatabase(records);
-		sortRecords();
+		// split multiple records
+		records = this.splitRecords(records);
+		
 		records.forEach(record -> System.out.println(java.util.Arrays.toString(record)));
+		
+		// add records to the database
+		this.addRecordsToDatabase(records);
+		
+		// sort
+		this.sortRecords();
 		
 		HibernateUtil.shutdown();
 	}
+	
+	private List<String[]> splitRecords(List<String[]> records) {
+		if (records == null || records.size() == 0) {
+			return new ArrayList<String[]>();
+		}
+		
+		List<String[]> result = new ArrayList<String[]>((int) (records.size() * 1.1));
+		
+		final int normalLength = records.get(0).length;
+		for (String[] record : records) {
+			if (record.length == normalLength * 2) {
+				// split
+				result.add(java.util.Arrays.copyOfRange(record, 0, normalLength));
+				result.add(java.util.Arrays.copyOfRange(record, normalLength, normalLength * 2));
+			} else {
+				// copy reference
+				result.add(record);
+			}
+		}
+		
+		return result;
+	}
 
-  private void sortRecords() {
-    Session session = HibernateUtil.getSessionFactory().openSession();
-    session.beginTransaction();
-//    Query query = session.createQuery("FROM adresses adress ORDERBY LastName");
-    Property lastName = Property.forName("LastName");
-    List<Address> result = session.createCriteria(Address.class)
-                                  .add(lastName.isNotNull())
-                                  .addOrder(Order.asc("LastName")).list();
-    LevenshteinDistance levenshtein = new LevenshteinDistance(true); // true as in: normalize
-    LinkedList<LinkedList<Address>> equivalenceClasses = new LinkedList<LinkedList<Address>>();
-    for(Iterator<Address> it = result.iterator(); it.hasNext();) {
-      Address address = it.next();
-      for (LinkedList<Address> list : equivalenceClasses) {
-        String name = list.getFirst().LastName;
-        if (name.equals(address.LastName) || levenshtein.distance(name, address.LastName) < 0.8)
-          addDuplicate(address, list);
-      }
-    }
-    session.getTransaction().commit();
-    session.close();
-  }
+	private void sortRecords() {
+		Session session = HibernateUtil.getSessionFactory().openSession();
+		session.beginTransaction();
+		//    Query query = session.createQuery("FROM adresses adress ORDERBY LastName");
+		Property lastName = Property.forName("LastName");
+		List<Address> result = session.createCriteria(Address.class)
+				.add(lastName.isNotNull())
+				.addOrder(Order.asc("LastName")).list();
+		LevenshteinDistance levenshtein = new LevenshteinDistance(true); // true as in: normalize
+		LinkedList<LinkedList<Address>> equivalenceClasses = new LinkedList<LinkedList<Address>>();
+		for(Iterator<Address> it = result.iterator(); it.hasNext();) {
+			Address address = it.next();
+			for (LinkedList<Address> list : equivalenceClasses) {
+				String name = list.getFirst().LastName;
+				if (name.equals(address.LastName) || levenshtein.distance(name, address.LastName) < 0.8)
+					addDuplicate(address, list);
+			}
+		}
+		session.getTransaction().commit();
+		session.close();
+	}
 
-  private void addRecordsToDatabase(List<String[]> records) {
-    Session session = HibernateUtil.getSessionFactory().openSession();
-    session.beginTransaction();
-    for (String[] strings : records) {
-      Address address = new Address(strings);
-      session.persist(address);
-    }
-    session.getTransaction().commit(); 
-    session.close();
-  }
-  
-  private LinkedList<Address> addDuplicate(Address item, LinkedList<Address> equivalentItems) {
-    if (item.SetAttributeCount > equivalentItems.get(0).SetAttributeCount)
-      equivalentItems.add(0, item);
-    else {
-      equivalentItems.add(item);
-    }
-    return equivalentItems;
-  }
+	private void addRecordsToDatabase(List<String[]> records) {
+		Session session = HibernateUtil.getSessionFactory().openSession();
+		session.beginTransaction();
+		for (String[] strings : records) {
+			Address address = new Address(strings);
+			session.persist(address);
+		}
+		session.getTransaction().commit(); 
+		session.close();
+	}
+
+	private LinkedList<Address> addDuplicate(Address item, LinkedList<Address> equivalentItems) {
+		if (item.SetAttributeCount > equivalentItems.get(0).SetAttributeCount)
+			equivalentItems.add(0, item);
+		else {
+			equivalentItems.add(item);
+		}
+		return equivalentItems;
+	}
 }
