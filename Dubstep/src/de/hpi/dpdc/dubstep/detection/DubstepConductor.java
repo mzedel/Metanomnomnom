@@ -160,11 +160,25 @@ public class DubstepConductor {
 		LinkedList<LinkedList<Address>> equivalenceClasses = new LinkedList<LinkedList<Address>>();
 		for(Iterator<Address> it = result.iterator(); it.hasNext();) {
 			Address address = it.next();
+			boolean found = false;
 			for (LinkedList<Address> list : equivalenceClasses) {
 				String name = list.getFirst().LastName;
-				if (name.equals(address.LastName) || levenshtein.distance(name, address.LastName) < 0.8)
+				if (name.equals(address.LastName) || levenshtein.distance(name, address.LastName) < 0.2) {
 					addDuplicate(address, list);
+					found = true;
+				}
 			}
+			if (!found) {
+			    LinkedList<Address> addresses = new LinkedList<Address>();
+			    addresses.add(address);
+			    equivalenceClasses.add(addresses);
+			}
+		}
+		System.out.println("Equivalence classes found:" + equivalenceClasses.size() + " from #records " + result.size());
+		for (LinkedList<Address> linkedList : equivalenceClasses) {
+		    System.out.println(linkedList.getFirst().LastName + " distance to: " 
+			    + levenshtein.distance(linkedList.getFirst().LastName, linkedList.getLast().LastName) 
+			    + " last: " + linkedList.getLast().LastName);
 		}
 		session.getTransaction().commit();
 		session.close();

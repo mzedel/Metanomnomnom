@@ -6,6 +6,8 @@ import java.util.Date;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Index;
 import javax.persistence.Table;
@@ -18,10 +20,11 @@ public class Address {
   
   // do not change the ID
   @Id
-  public Integer Id;
+  @GeneratedValue(strategy=GenerationType.AUTO)
+  private Integer id;
   
-  @Column(name="origId", length=20, nullable=true)
-  private String id;
+  @Column(name="OrigId", length=20, nullable=true)
+  public String OrigId;
   
   public String Salutation;
   
@@ -65,8 +68,7 @@ public class Address {
   
   public Address(String[] rawAdress) {
     this();
-    this.id = rawAdress[0];
-    this.Id = Integer.parseInt(this.id);
+    this.OrigId = rawAdress[0];
     this.Salutation = rawAdress[1];
     this.Title = rawAdress[2];
     this.FirstName = rawAdress[3];
