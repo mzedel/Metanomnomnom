@@ -222,7 +222,7 @@ public class DubstepConductor {
 	 * Convenience class for handling duplicates. The first id is always the
 	 * smaller one, and <tt>Duplicate</tt>s are comparable.
 	 */
-	private class Duplicate implements Comparable<Duplicate> {
+	public class Duplicate implements Comparable<Duplicate> {
 
 		private int id1;
 		private int id2;
@@ -265,6 +265,9 @@ public class DubstepConductor {
 	private void findDuplicates(List<List<Address>> classes) throws IOException {
 		// prepare sorted set of output strings ("id1,id2")
 		SortedSet<Duplicate> duplicates = new TreeSet<Duplicate>();
+		for (List<Address> equivalenceClass : classes) {
+		    
+		}
 		
 		// TODO find duplicates
 		duplicates.add(new Duplicate(1923, 128485));
