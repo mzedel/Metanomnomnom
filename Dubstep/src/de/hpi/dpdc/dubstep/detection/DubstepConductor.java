@@ -8,6 +8,7 @@ import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -133,11 +134,19 @@ public class DubstepConductor {
 		Map<String, List<Address>> blocks = this.createBlocks(records);
 		records = null;
 		System.out.println("Blocking: " + ((System.nanoTime() - timeNow) / 1000000) + "ms");
+		System.out.println("\tnumber of blocks: " + blocks.size());
 		timeNow = System.nanoTime();
 		
-		// find duplicates and write them to the output path
-		this.findDuplicates(blocks);
-		System.out.println("Finding duplicates: " + ((System.nanoTime() - timeNow) / 1000000) + "ms");
+		// find duplicates
+		Set<Duplicate> duplicates = this.findDuplicates(blocks);
+		blocks = null;
+		System.out.println("Finding: " + ((System.nanoTime() - timeNow) / 1000000) + "ms");
+		System.out.println("\tnumber of duplicates: " + duplicates.size());
+		timeNow = System.nanoTime();
+		
+		// write the duplicates
+		this.writeDuplicates(duplicates);
+		System.out.println("Writing: " + ((System.nanoTime() - timeNow) / 1000000) + "ms");
 	}
 	
 	/**
@@ -236,15 +245,15 @@ public class DubstepConductor {
 	}
 	
 	/**
-	 * Find duplicates and write them to the output path.
+	 * Find duplicates.
 	 * @param blocks the blocks of records
-	 * @throws IOException if the writing fails
+	 * @return the set of duplicates
 	 */
-	private void findDuplicates(Map<String, List<Address>> blocks) throws IOException {
+	private Set<Duplicate> findDuplicates(Map<String, List<Address>> blocks) throws IOException {
 		// prepare sorted set of output strings ("id1,id2")
 		SortedSet<Duplicate> duplicates = new TreeSet<Duplicate>();
 		
-		// TODO find duplicates
+		// find duplicates
 		Address address1, address2;
 		for (List<Address> block : blocks.values()) {
 			// compare records within the block
@@ -261,6 +270,16 @@ public class DubstepConductor {
 			}
 		}
 		
+		// return result
+		return duplicates;
+	}
+	
+	/**
+	 * Write the set of duplicates to the output path.
+	 * @param duplicates the duplicates
+	 * @throws IOException if the writing fails
+	 */
+	private void writeDuplicates(Set<Duplicate> duplicates) throws IOException {
 		// write duplicates to output path
 		List<String> duplicateStrings = new ArrayList<String>(duplicates.size());
 		for (Duplicate duplicate : duplicates) {
