@@ -189,17 +189,13 @@ public class DubstepConductor {
 		System.out.println(count);
 		
 		List<Address> result = session.createCriteria(Address.class)
-//				.add(lastName.isNotNull())
 				.addOrder(Order.asc("Key")).list();
-		LevenshteinDistance levenshtein = new LevenshteinDistance(true); // true as in: normalize
 		LinkedList<LinkedList<Address>> equivalenceClasses = new LinkedList<LinkedList<Address>>();
 		for(Iterator<Address> it = result.iterator(); it.hasNext();) {
 			Address address = it.next();
-			String addressKey = address.Key.substring(address.Key.indexOf(":"));
 			boolean found = false;
 			for (LinkedList<Address> list : equivalenceClasses) {
-				String name = list.getFirst().Key.substring(list.getFirst().Key.indexOf(":"));
-				if (name.equals(addressKey)) {
+				if (list.getFirst().Key.equals(address.Key)) {
 					addDuplicate(address, list);
 					found = true;
 					break;
