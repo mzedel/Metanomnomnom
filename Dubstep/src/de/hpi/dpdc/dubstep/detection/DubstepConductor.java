@@ -2,11 +2,15 @@ package de.hpi.dpdc.dubstep.detection;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 import org.hibernate.Session;
 import org.hibernate.criterion.Order;
@@ -133,10 +137,14 @@ public class DubstepConductor {
 		System.out.println("Writing to Database: " + ((System.nanoTime() - timeNow) / 1000000) + "ms");
 		timeNow = System.nanoTime();
 		
-		// sort
+		// sort and get equivalence classes
 		LinkedList<LinkedList<Address>> equivalenceClasses = this.sortAndGroupRecords();
 		System.out.println("Sorting and blocking: " + ((System.nanoTime() - timeNow) / 1000000) + "ms");
 		timeNow = System.nanoTime();
+		
+		// find duplicates and write them to the output path
+		this.findDuplicates(equivalenceClasses);
+		System.out.println("Finding duplicates:" + ((System.nanoTime() - timeNow) / 1000000) + "ms");
 		
 		HibernateUtil.shutdown();
 	}
@@ -221,4 +229,65 @@ public class DubstepConductor {
 		}
 		return equivalentItems;
 	}
+	
+	/**
+	 * Convenience class for handling duplicates. The first id is always the
+	 * smaller one, and <tt>Duplicate</tt>s are comparable.
+	 */
+	private class Duplicate implements Comparable<Duplicate> {
+
+		private int id1;
+		private int id2;
+		
+		public Duplicate(int idLeft, int idRight) {
+			if (idLeft < idRight) {
+				this.id1 = idLeft;
+				this.id2 = idRight;
+			} else if (idRight < idLeft) {
+				this.id1 = idRight;
+				this.id2 = idLeft;
+			} else {
+				// same id: we do not need trivial duplicates
+				throw new RuntimeException("Tried to create trivial duplicate: " + idLeft);
+			}
+		}
+		
+		@Override
+		public int compareTo(Duplicate other) {
+			if (this.id1 < other.id1 || (this.id1 == other.id1 && this.id2 < other.id2)) {
+				return -1;
+			} else if (this.id1 == other.id1 && this.id2 == other.id2) {
+				return 0;
+			} else {
+				return 1;
+			}
+		}
+		
+		public String toString() {
+			return this.id1 + "," + this.id2;
+		}
+		
+	}
+	
+	/**
+	 * Find duplicates and write them to the output path.
+	 * @param classes the blocks of records
+	 * @throws IOException if the writing fails
+	 */
+	private void findDuplicates(LinkedList<LinkedList<Address>> classes) throws IOException {
+		// prepare sorted set of output strings ("id1,id2")
+		SortedSet<Duplicate> duplicates = new TreeSet<Duplicate>();
+		
+		// TODO find duplicates
+		duplicates.add(new Duplicate(1923, 128485));
+		duplicates.add(new Duplicate(23, 5));
+		
+		// write duplicates to output path
+		List<String> duplicateStrings = new ArrayList<String>(duplicates.size());
+		for (Duplicate duplicate : duplicates) {
+			duplicateStrings.add(duplicate.toString());
+		}
+		Files.write(this.output, duplicateStrings, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING);
+	}
+	
 }
