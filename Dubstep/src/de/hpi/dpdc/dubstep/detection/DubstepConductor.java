@@ -6,20 +6,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.SortedSet;
+import java.util.TreeMap;
 import java.util.TreeSet;
 
-import org.hibernate.Criteria;
-import org.hibernate.Query;
-import org.hibernate.Session;
-import org.hibernate.criterion.Projections;
-import org.hibernate.criterion.Property;
-import org.hibernate.criterion.Restrictions;
-
 import de.hpi.dpdc.dubstep.detection.address.Address;
-import de.hpi.dpdc.dubstep.utils.HibernateUtil;
 
 /**
  * Orchestrates the other components to perform the duplicate detection for a
@@ -120,6 +113,7 @@ public class DubstepConductor {
 		
 		// parse
 		List<String[]> records = this.dataFactory.createParser().parse(raw);
+		raw = null;
 		System.out.println("Parsing: " + ((System.nanoTime() - timeNow) / 1000000) + "ms");
 		timeNow = System.nanoTime();
 		
@@ -133,21 +127,15 @@ public class DubstepConductor {
 		System.out.println("Splitting: " + ((System.nanoTime() - timeNow) / 1000000) + "ms");
 		timeNow = System.nanoTime();
 		
-		// add records to the database
-		this.addRecordsToDatabase(records);
-		System.out.println("Writing to Database: " + ((System.nanoTime() - timeNow) / 1000000) + "ms");
-		timeNow = System.nanoTime();
-		
-		// sort and get equivalence classes
-		List<List<Address>> equivalenceClasses = this.sortAndGroupRecords();
-		System.out.println("Sorting and blocking: " + ((System.nanoTime() - timeNow) / 1000000) + "ms");
+		// blocking
+		Map<String, List<Address>> blocks = this.createBlocks(records);
+		records = null;
+		System.out.println("Blocking: " + ((System.nanoTime() - timeNow) / 1000000) + "ms");
 		timeNow = System.nanoTime();
 		
 		// find duplicates and write them to the output path
-		this.findDuplicates(equivalenceClasses);
-		System.out.println("Finding duplicates:" + ((System.nanoTime() - timeNow) / 1000000) + "ms");
-		
-		HibernateUtil.shutdown();
+		this.findDuplicates(blocks);
+		System.out.println("Finding duplicates: " + ((System.nanoTime() - timeNow) / 1000000) + "ms");
 	}
 	
 	/**
@@ -176,46 +164,34 @@ public class DubstepConductor {
 		
 		return result;
 	}
-
-	@SuppressWarnings("unchecked")
-	private List<List<Address>> sortAndGroupRecords() {
-		Session session = HibernateUtil.getSessionFactory().openSession();
-		session.beginTransaction();
-		//    Query query = session.createQuery("FROM adresses adress ORDERBY LastName");
-
-		Property key = Property.forName("Key");
+	
+	/**
+	 * Create proper {@link Address} objects from raw records, remove objects
+	 * without keys (no postal code or last name), group by key.
+	 * @param records the records to be grouped
+	 * @return map of grouped records
+	 */
+	private Map<String, List<Address>> createBlocks(List<String[]> records) {
+		Map<String, List<Address>> blocks = new TreeMap<String, List<Address>>();
 		
-		List<String> count = session.createCriteria(Address.class).setProjection(
-			Projections.projectionList().add( 
-				Projections.distinct(
-					Projections.projectionList() 
-						.add(Projections.property(key.getPropertyName()))
-				)
-			)
-		).list();
-		System.out.println(count.size());
-		List<List<Address>> equivalenceClasses = new ArrayList<List<Address>>();
-		Criteria cr = session.createCriteria(Address.class);
-		for (String string : count) {
-		    cr.add(Restrictions.eq("Key", string));
-		    equivalenceClasses.add(cr.list());
+		Address address = null;
+		for (String[] record : records) {
+			// create Address object from record
+			address = new Address(record);
+			if (address.key == null) {
+				// no key (i.e., no postal code or no last name) => skip
+				continue;
+			}
+			
+			// add record to map
+			if (!blocks.containsKey(address.key)) {
+				// add new list for key
+				blocks.put(address.key, new ArrayList<Address>());
+			}
+			blocks.get(address.key).add(address);
 		}
-		System.out.println("Equivalence classes found:" + equivalenceClasses.size());
-		session.getTransaction().commit();
-		session.close();
 		
-		return equivalenceClasses;
-	}
-
-	private void addRecordsToDatabase(List<String[]> records) {
-		Session session = HibernateUtil.getSessionFactory().openSession();
-		session.beginTransaction();
-		for (String[] strings : records) {
-			Address address = new Address(strings);
-			session.persist(address);
-		}
-		session.getTransaction().commit(); 
-		session.close();
+		return blocks;
 	}
 	
 	/**
@@ -259,10 +235,10 @@ public class DubstepConductor {
 	
 	/**
 	 * Find duplicates and write them to the output path.
-	 * @param classes the blocks of records
+	 * @param blocks the blocks of records
 	 * @throws IOException if the writing fails
 	 */
-	private void findDuplicates(List<List<Address>> classes) throws IOException {
+	private void findDuplicates(Map<String, List<Address>> blocks) throws IOException {
 		// prepare sorted set of output strings ("id1,id2")
 		SortedSet<Duplicate> duplicates = new TreeSet<Duplicate>();
 		for (List<Address> equivalenceClass : classes) {
@@ -270,8 +246,21 @@ public class DubstepConductor {
 		}
 		
 		// TODO find duplicates
-		duplicates.add(new Duplicate(1923, 128485));
-		duplicates.add(new Duplicate(23, 5));
+		Address address1, address2;
+		for (List<Address> block : blocks.values()) {
+			// compare records within the block
+			int blockSize = block.size();
+			for (int i = 0; i < blockSize; i++) {
+				address1 = block.get(i);
+				for (int j = i + 1; j < blockSize; j++) {
+					address2 = block.get(j);
+					if (this.isDuplicate(address1, address2)) {
+						// found a duplicate, add it to the collection
+						duplicates.add(new Duplicate(address1.origId, address2.origId));	// ids must not be null
+					}
+				}
+			}
+		}
 		
 		// write duplicates to output path
 		List<String> duplicateStrings = new ArrayList<String>(duplicates.size());
@@ -279,6 +268,19 @@ public class DubstepConductor {
 			duplicateStrings.add(duplicate.toString());
 		}
 		Files.write(this.output, duplicateStrings, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING);
+	}
+	
+	/**
+	 * Decide whether the given objects are duplicates, i.e., represent the same
+	 * real world entity.
+	 * @param address1
+	 * @param address2
+	 * @return <tt>true</tt> if the given objects are probably duplicates, 
+	 * 	<tt>false</tt> otherwise
+	 */
+	private boolean isDuplicate(Address address1, Address address2) {
+		// TODO implement
+		return false;
 	}
 	
 }

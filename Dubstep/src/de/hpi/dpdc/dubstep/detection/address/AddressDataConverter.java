@@ -191,10 +191,10 @@ public class AddressDataConverter implements DataConverter {
 			convertedRecord[10] = null;
 		}
 		
-		// TODO deal with places (e.g. "Bunsoh , Dithm")
+		// copy places
 		convertedRecord[11] = copyTrimmed(record[9]);
 		
-		// TODO normalize or keep mobile phone
+		// copy mobile phone number
 		convertedRecord[12] = copyTrimmed(record[10]);
 		
 		// ignore unknown and rare data
