@@ -15,7 +15,6 @@ import java.util.TreeSet;
 
 import slib.sml.sm.core.measures.string.LevenshteinDistance;
 import de.hpi.dpdc.dubstep.detection.address.Address;
-import de.hpi.dpdc.dubstep.detection.address.AddressAnalysisPipeline;
 
 /**
  * Orchestrates the other components to perform the duplicate detection for a
