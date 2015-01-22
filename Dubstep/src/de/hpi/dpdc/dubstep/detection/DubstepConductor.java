@@ -106,26 +106,46 @@ public class DubstepConductor {
 	 * @throws IOException if anything goes wrong with reading or writing
 	 */
 	public void execute() throws IOException {
-		// read, parse, convert data
-		List<String[]> records = this.dataFactory.createConverter().convert(
-				this.dataFactory.createParser().parse(
-						this.dataFactory.createReader().read(
-								this.input.toString()).subList(0, 200)));	// TODO parse all records
+		long timeNow = System.nanoTime();
 		
-		// split multiple records
+		// read
+		List<String> raw = this.dataFactory.createReader().read(this.input.toString());
+		System.out.println("Reading: " + ((System.nanoTime() - timeNow) / 1000000) + "ms");
+		timeNow = System.nanoTime();
+		
+		// parse
+		List<String[]> records = this.dataFactory.createParser().parse(raw);
+		System.out.println("Parsing: " + ((System.nanoTime() - timeNow) / 1000000) + "ms");
+		timeNow = System.nanoTime();
+		
+		// convert
+		records = this.dataFactory.createConverter().convert(records);
+		System.out.println("Converting: " + ((System.nanoTime() - timeNow) / 1000000) + "ms");
+		timeNow = System.nanoTime();
+		
+		// split double records
 		records = this.splitRecords(records);
-		
-		records.forEach(record -> System.out.println(java.util.Arrays.toString(record)));
+		System.out.println("Splitting: " + ((System.nanoTime() - timeNow) / 1000000) + "ms");
+		timeNow = System.nanoTime();
 		
 		// add records to the database
 		this.addRecordsToDatabase(records);
+		System.out.println("Writing to Database: " + ((System.nanoTime() - timeNow) / 1000000) + "ms");
+		timeNow = System.nanoTime();
 		
 		// sort
-		this.sortRecords();
+		LinkedList<LinkedList<Address>> equivalenceClasses = this.sortAndGroupRecords();
+		System.out.println("Sorting and blocking: " + ((System.nanoTime() - timeNow) / 1000000) + "ms");
+		timeNow = System.nanoTime();
 		
 		HibernateUtil.shutdown();
 	}
 	
+	/**
+	 * Make sure that records which represent two entities are split up.
+	 * @param records the records to be copied or split
+	 * @return copied and split records
+	 */
 	private List<String[]> splitRecords(List<String[]> records) {
 		if (records == null || records.size() == 0) {
 			return new ArrayList<String[]>();
@@ -148,7 +168,8 @@ public class DubstepConductor {
 		return result;
 	}
 
-	private void sortRecords() {
+	@SuppressWarnings("unchecked")
+	private LinkedList<LinkedList<Address>> sortAndGroupRecords() {
 		Session session = HibernateUtil.getSessionFactory().openSession();
 		session.beginTransaction();
 		//    Query query = session.createQuery("FROM adresses adress ORDERBY LastName");
@@ -175,13 +196,10 @@ public class DubstepConductor {
 			}
 		}
 		System.out.println("Equivalence classes found:" + equivalenceClasses.size() + " from #records " + result.size());
-		for (LinkedList<Address> linkedList : equivalenceClasses) {
-		    System.out.println(linkedList.getFirst().LastName + " distance to: " 
-			    + levenshtein.distance(linkedList.getFirst().LastName, linkedList.getLast().LastName) 
-			    + " last: " + linkedList.getLast().LastName);
-		}
 		session.getTransaction().commit();
 		session.close();
+		
+		return equivalenceClasses;
 	}
 
 	private void addRecordsToDatabase(List<String[]> records) {

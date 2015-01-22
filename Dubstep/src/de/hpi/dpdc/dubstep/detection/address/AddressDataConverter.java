@@ -83,7 +83,7 @@ public class AddressDataConverter implements DataConverter {
 		
 		// last names
 		String lastName = copyTrimmed(record[4]);
-		// remove everything after more than one space (e.g. "                    ibn")
+		// remove everything after more than one space (e.g. "   ibn")
 		if (lastName != null) {
 			int crapIndex = lastName.indexOf("  ");
 			if (crapIndex != -1) {
