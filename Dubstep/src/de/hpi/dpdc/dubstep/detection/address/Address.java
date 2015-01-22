@@ -26,9 +26,7 @@ public class Address {
   
   @Column(name="OrigId", length=20, nullable=true)
   public String OrigId;
-  
-  public String Salutation;
-  
+    
   public String Title;
   
   public String FirstName;
@@ -53,14 +51,6 @@ public class Address {
   
   public String PhoneNumber;
   
-  public String WhatEver1;
-  
-  public String WhatEver2;
-  
-  public String WhatEver3;
-  
-  public String WhatEver4;
-  
   public int SetAttributeCount = 0;
   
   public String Key;
@@ -72,7 +62,6 @@ public class Address {
   public Address(String[] rawAdress) {
     this();
     this.OrigId = rawAdress[0];
-    this.Salutation = rawAdress[1];
     this.Title = rawAdress[2];
     this.FirstName = rawAdress[3];
     this.LastName = rawAdress[4];
@@ -89,16 +78,14 @@ public class Address {
     this.PostalCode = rawAdress[10];
     this.City = rawAdress[11];
     this.PhoneNumber = rawAdress[12];
-    this.WhatEver1 = rawAdress[13];
-    this.WhatEver2 = rawAdress[14];
-    this.WhatEver3 = rawAdress[15];
     for (String item : rawAdress) {
       if(item != null && !item.isEmpty())
         this.SetAttributeCount++;
     }
-    if (this.PostalCode != null && this.LastName != null)
-    this.Key = this.PostalCode.substring(0, Math.min(this.PostalCode.length(), 3))
+    if (this.PostalCode != null && this.LastName != null) {
+	this.Key = this.PostalCode.substring(0, Math.min(this.PostalCode.length(), 3))
 		+ ":"
-    		+ this.LastName.substring(0, Math.min(this.LastName.length(), 4));
+    		+ this.LastName.substring(0, Math.min(this.LastName.length(), 2));
+    }
   }
 }

@@ -8,8 +8,10 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.hibernate.Criteria;
 import org.hibernate.Session;
 import org.hibernate.criterion.Order;
+import org.hibernate.criterion.Projections;
 import org.hibernate.criterion.Property;
 
 import slib.sml.sm.core.measures.string.LevenshteinDistance;
@@ -173,7 +175,19 @@ public class DubstepConductor {
 		Session session = HibernateUtil.getSessionFactory().openSession();
 		session.beginTransaction();
 		//    Query query = session.createQuery("FROM adresses adress ORDERBY LastName");
+
 		Property lastName = Property.forName("Key");
+		
+		String count = session.createCriteria(Address.class).setProjection(
+			Projections.projectionList().add( 
+				Projections.distinct(
+					Projections.projectionList() 
+						.add(Projections.property(lastName.getPropertyName()))
+				)
+			)
+		).list().size() + "";
+		System.out.println(count);
+		
 		List<Address> result = session.createCriteria(Address.class)
 //				.add(lastName.isNotNull())
 				.addOrder(Order.asc("Key")).list();
@@ -185,7 +199,7 @@ public class DubstepConductor {
 			boolean found = false;
 			for (LinkedList<Address> list : equivalenceClasses) {
 				String name = list.getFirst().Key.substring(list.getFirst().Key.indexOf(":"));
-				if (name.equals(address.Key) || levenshtein.distance(name, addressKey) < 0.2) {
+				if (name.equals(addressKey)) {
 					addDuplicate(address, list);
 					found = true;
 					break;
