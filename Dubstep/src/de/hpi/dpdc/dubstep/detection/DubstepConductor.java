@@ -14,8 +14,9 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 
 import uk.ac.shef.wit.simmetrics.similaritymetrics.AbstractStringMetric;
+import uk.ac.shef.wit.simmetrics.similaritymetrics.JaroWinkler;
 import uk.ac.shef.wit.simmetrics.similaritymetrics.Levenshtein;
-import uk.ac.shef.wit.simmetrics.similaritymetrics.Soundex;
+import uk.ac.shef.wit.simmetrics.similaritymetrics.MongeElkan;
 import de.hpi.dpdc.dubstep.detection.address.Address;
 
 /**
@@ -298,22 +299,122 @@ public class DubstepConductor {
 	 * 	<tt>false</tt> otherwise
 	 */
 	private boolean isDuplicate(Address address1, Address address2) {
-	    	AbstractStringMetric metric = new Levenshtein();
-//            AbstractStringMetric metric = new CosineSimilarity();
-//            AbstractStringMetric metric = new EuclideanDistance();
-//            AbstractStringMetric metric = new MongeElkan();	
-	    
-          	if (metric.getSimilarity(address1.lastName, address2.lastName) < 0.1) {
-          	    if (metric.getSimilarity(address1.firstName, address2.firstName) < 0.1) {
-          		if (metric.getSimilarity(address1.city, address2.city) < 0.1) {
-          		    if (metric.getSimilarity(address1.streetName, address2.streetName) < 0.1) {
-          			return true;
-          		    }
-          		}
-          	    }
+	    AbstractStringMetric levenshteinMetric = new Levenshtein();
+            AbstractStringMetric winklerMetric = new JaroWinkler();
+            AbstractStringMetric mongeElkanMetric = new MongeElkan();
+	    // may need some adjustments 
+            // used https://nats-www.informatik.uni-hamburg.de/pub/User/PhD/ElitaGavrilaVertanEditedFinal.pdf´
+            // as a rule of thumb
+            final double LEVENSHTEIN_THRESHOLD = 0.75;
+	    final double WINKLER_YEAR_THRESHOLD = 0.7;
+	    final double MONGE_ELKAN_THRESHOLD = 0.7;
+	    final double WINKLER_TITLE_THRESHOLD = 0.4;
+	    final int STREET_NAME_TOLERANCE = 4; // to allow str / strasse
+	    final int LENGTH_TOLERANCE = 2;
+	    final double BE_STRICTER = 0.1;
+
+	    if (((Math.abs(address1.lastName.length() - address2.lastName.length()) <= LENGTH_TOLERANCE)
+          	&& ((levenshteinMetric.getSimilarity(address1.lastName, address2.lastName) > LEVENSHTEIN_THRESHOLD)
+      		  || (mongeElkanMetric.getSimilarity(address1.lastName, address2.lastName) > MONGE_ELKAN_THRESHOLD)))
+      		|| ((address1.lastName.startsWith(address2.firstName.substring(0, 2))
+      			|| address2.lastName.startsWith(address1.firstName.substring(0, 2))))) {
+              if ((Math.abs(address1.firstName.length() - address2.firstName.length()) <= LENGTH_TOLERANCE) || (address1.firstName.startsWith(address2.firstName.substring(0, 2))
+    		  || address2.firstName.startsWith(address1.firstName.substring(0, 2)))) {
+        	  // firstName might fit, city and streetname + birthYear should be enough
+        	  if ((levenshteinMetric.getSimilarity(address1.firstName, address2.firstName) > LEVENSHTEIN_THRESHOLD) 
+        		  || (mongeElkanMetric.getSimilarity(address1.firstName, address2.firstName) > MONGE_ELKAN_THRESHOLD)) {
+        	      // t,fN,lN,bY,sN,c
+        	      // -,x ,x , -, -,-
+                    if ((Math.abs(address1.city.length() - address2.city.length()) <= LENGTH_TOLERANCE)
+                    	&& ((levenshteinMetric.getSimilarity(address1.city, address2.city) > LEVENSHTEIN_THRESHOLD)
+                    		|| (mongeElkanMetric.getSimilarity(address1.city, address2.city) > MONGE_ELKAN_THRESHOLD))) {
+                	// t,fN,lN,bY,sN,c
+                	// -, x, x, -, -,x
+                	if ((Math.abs(address1.streetName.length() - address2.streetName.length()) <= STREET_NAME_TOLERANCE)
+                    		&& ((levenshteinMetric.getSimilarity(address1.streetName, address2.streetName) > LEVENSHTEIN_THRESHOLD)
+                            		|| (mongeElkanMetric.getSimilarity(address1.streetName, address2.streetName) > MONGE_ELKAN_THRESHOLD))) {
+                	    // t,fN,lN,bY,sN,c
+                	    // -,x ,x , -, x,x
+                    	    if (address1.birthYear != null && address2.birthYear != null) {
+                    		// if birthyears exist but are different, these might be father & son
+                    		if (winklerMetric.getSimilarity(address1.birthYear, address2.birthYear) > WINKLER_YEAR_THRESHOLD) {
+                    		    return true;
+                    		} else {
+                    		    return false;
+                    		}
+                    	    }
+                    	    return true;
+                    	}
+                    } else if ((address1.city.isEmpty() || address2.city.isEmpty()) && winklerMetric.getSimilarity(address1.birthYear, address2.birthYear) > WINKLER_YEAR_THRESHOLD) {
+                	// postalcode should be close to equal anyway, birthdates probably close
+                	if ((Math.abs(address1.streetName.length() - address2.streetName.length()) <= STREET_NAME_TOLERANCE)
+                    		&& levenshteinMetric.getSimilarity(address1.streetName, address2.streetName) > LEVENSHTEIN_THRESHOLD) {
+                	    return true;
+                	}
+                    }
+        	  }
+        	  
+              }
+	    }
+	    // lastName failed
+	    else if ((levenshteinMetric.getSimilarity(address1.firstName, address2.firstName) > LEVENSHTEIN_THRESHOLD + BE_STRICTER) 
+  		  || (mongeElkanMetric.getSimilarity(address1.firstName, address2.firstName) > MONGE_ELKAN_THRESHOLD + BE_STRICTER)) {
+  	      // t,fN,lN,bY,sN,c
+  	      // -, X,! , -, -,-
+              if ((Math.abs(address1.city.length() - address2.city.length()) <= LENGTH_TOLERANCE)
+              	&& ((levenshteinMetric.getSimilarity(address1.city, address2.city) > LEVENSHTEIN_THRESHOLD + BE_STRICTER)
+              		|| (mongeElkanMetric.getSimilarity(address1.city, address2.city) > MONGE_ELKAN_THRESHOLD + BE_STRICTER))) {
+          	// t,fN,lN,bY,sN,c
+          	// -, X,! , -, -,X
+          	if ((Math.abs(address1.streetName.length() - address2.streetName.length()) <= STREET_NAME_TOLERANCE)
+              		&& ((levenshteinMetric.getSimilarity(address1.streetName, address2.streetName) > LEVENSHTEIN_THRESHOLD)
+                      		|| (mongeElkanMetric.getSimilarity(address1.streetName, address2.streetName) > MONGE_ELKAN_THRESHOLD))) {
+          	    // t,fN,lN,bY,sN,c
+          	    // -, X,! , -, x,X
+              	    if (address1.birthYear != null && address2.birthYear != null) {
+              		// if birthday is not defined, we may not know, otherwise beStricter!
+              		if (address1.birthYear.equals(address2.birthYear)) {
+              		    return true;
+              		} else {
+              		    return false;
+              		}
+              	    }
+              	    return true;
+              	}
+              } else if ((address1.city.isEmpty() || address2.city.isEmpty()) && winklerMetric.getSimilarity(address1.birthYear, address2.birthYear) > WINKLER_YEAR_THRESHOLD) {
+          	// postalcode should be close to equal anyway, birthdates probably close
+          	if ((Math.abs(address1.streetName.length() - address2.streetName.length()) <= STREET_NAME_TOLERANCE)
+              		&& levenshteinMetric.getSimilarity(address1.streetName, address2.streetName) > LEVENSHTEIN_THRESHOLD) {
+          	    return true;
           	}
-          	metric = new Soundex();
-		return false;
+              }
+	    }
+	    // now pay extra attention to other details - 
+	    // t,fN,lN,bY,sN,c
+	    // -,! ,! , -, -,-
+	    else if (((Math.abs(address1.city.length() - address2.city.length()) <= LENGTH_TOLERANCE)
+	              	&& ((levenshteinMetric.getSimilarity(address1.city, address2.city) > LEVENSHTEIN_THRESHOLD + BE_STRICTER)
+	              		|| (mongeElkanMetric.getSimilarity(address1.city, address2.city) > MONGE_ELKAN_THRESHOLD + BE_STRICTER)))
+	              ||
+	              ((!address1.title.isEmpty() && !address2.title.isEmpty())
+	        	      && (winklerMetric.getSimilarity(address1.title, address2.title) > WINKLER_TITLE_THRESHOLD))) {
+		if (winklerMetric.getSimilarity(address1.houseNumber, address2.houseNumber) > MONGE_ELKAN_THRESHOLD) {
+          	    // t,fN,lN,bY,sN,c
+          	    // y,! ,! , -, -,Y
+              	    if (address1.birthYear != null && address2.birthYear != null) {
+              		if (winklerMetric.getSimilarity(address1.birthYear, address2.birthYear) > WINKLER_YEAR_THRESHOLD) {
+            		    return true;
+              		} else {
+              		    return false;
+              		}
+              	    }
+              	    if (mongeElkanMetric.getSimilarity(address1.streetName, address2.streetName) > WINKLER_YEAR_THRESHOLD) {
+              		return true;
+              	    }
+              	}
+	    }
+	              
+	    return false;
 	}
 	
 }
