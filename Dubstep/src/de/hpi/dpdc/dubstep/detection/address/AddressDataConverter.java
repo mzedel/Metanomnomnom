@@ -74,7 +74,7 @@ public class AddressDataConverter implements DataConverter {
 		// first names
 		String firstName = copyTrimmed(record[3]);
 		// change "eSvn." to "Sven." - the structure of these cases always seem to be the same
-		if (firstName != null && firstName.length() >= 2 && Character.isUpperCase(firstName.charAt(1))) {
+		if (!firstName.isEmpty() && firstName.length() >= 2 && Character.isUpperCase(firstName.charAt(1))) {
 			firstName = firstName.substring(1, firstName.length() >= 3 ? 3 : 2)
 					.concat(firstName.substring(0, 1))
 					.concat(firstName.length() >= 4 ? (firstName.substring(3)) : "");
@@ -84,7 +84,7 @@ public class AddressDataConverter implements DataConverter {
 		// last names
 		String lastName = copyTrimmed(record[4]);
 		// remove everything after more than one space (e.g. "   ibn")
-		if (lastName != null) {
+		if (!lastName.isEmpty()) {
 			int crapIndex = lastName.indexOf("  ");
 			if (crapIndex != -1) {
 				lastName = lastName.substring(0, crapIndex);
@@ -97,7 +97,7 @@ public class AddressDataConverter implements DataConverter {
 		String rawDate = copyTrimmed(record[5]);
 		String rawDay = "";
 		String rawMonth = "";
-		if (rawDate != null && rawDate.length() >= 8) {
+		if (!rawDate.isEmpty() && rawDate.length() >= 8) {
 			if (rawDate.contains(".")) {
 				// dd.mm.yyyy
 			    rawDay = rawDate.substring(0, 2);
@@ -136,17 +136,17 @@ public class AddressDataConverter implements DataConverter {
 				convertedRecord[7] = rawDay;
 			} catch (NumberFormatException e) {
 				// not a number
-				convertedRecord[5] = convertedRecord[6] = convertedRecord[7] = null;
+				convertedRecord[5] = convertedRecord[6] = convertedRecord[7] = "";
 			}
 		} else {
 			// null or unexpected format
-		    convertedRecord[5] = convertedRecord[6] = convertedRecord[7] = null;
+		    convertedRecord[5] = convertedRecord[6] = convertedRecord[7] = "";
 		}
 		
 		// streets
 		String street = copyTrimmed(record[6]);
-		String houseNumber = null;
-		if (street != null) {
+		String houseNumber = "";
+		if (!street.isEmpty()) {
 			// extract house number
 			int lastBlankIndex = street.lastIndexOf(" ");
 			if (lastBlankIndex != -1) {
@@ -170,17 +170,17 @@ public class AddressDataConverter implements DataConverter {
 		
 		// normalize house numbers (to lower case)
 		convertedRecord[9] = copyTrimmed(record[7]);
-		if (convertedRecord[9] == null) {
-			// if there is no house number, use the number extracted from the street (may also be null)
+		if (convertedRecord[9].isEmpty()) {
+			// if there is no house number, use the number extracted from the street (may also be empty)
 			convertedRecord[9] = houseNumber;
 		}
-		if (convertedRecord[9] != null) {
+		if (convertedRecord[9].isEmpty()) {
 			convertedRecord[9] = convertedRecord[9].toLowerCase();
 		}
 		
 		// normalize postal code (fill with leading zeros, remove "D-")
 		String rawPostal = copyTrimmed(record[8]);
-		if (rawPostal != null) {
+		if (!rawPostal.isEmpty()) {
 			rawPostal = rawPostal.toUpperCase().replace("D-", "");
 			while (rawPostal.length() < 5) {
 				rawPostal = "0".concat(rawPostal);
@@ -188,7 +188,7 @@ public class AddressDataConverter implements DataConverter {
 			// store the postal code
 			convertedRecord[10] = rawPostal;
 		} else {
-			convertedRecord[10] = null;
+			convertedRecord[10] = "";
 		}
 		
 		// copy places
@@ -198,13 +198,13 @@ public class AddressDataConverter implements DataConverter {
 		convertedRecord[12] = copyTrimmed(record[10]);
 		
 		// ignore unknown and rare data
-		convertedRecord[13] = null;
+		convertedRecord[13] = "";
 		
 		// keep whatever number that is, for it is almost always there
 		convertedRecord[14] = copyTrimmed(record[12]);
 		
 		// ignore unknown and rare data
-		convertedRecord[15] = null;
+		convertedRecord[15] = "";
 		
 		/*
 		 * Check for multiple records
@@ -212,7 +212,7 @@ public class AddressDataConverter implements DataConverter {
 		// check first names (" u. ", " und ", " & ")
 		firstName = convertedRecord[3];
 		final int recordLength = convertedRecord.length;
-		if (firstName != null) {
+		if (!firstName.isEmpty()) {
 			for (String pattern : new String[] {" u. ", " und ", " & "}) {
 				String[] firstNames = firstName.split(pattern);
 				if (firstNames.length > 1) {
@@ -235,14 +235,13 @@ public class AddressDataConverter implements DataConverter {
 	
 	/**
 	 * Return a copy of the given string without leading / trailing whitespace /
-	 * quotation marks, or <tt>null</tt>, if the given string was <tt>null</tt> 
+	 * quotation marks, or an empty string, if the given string was <tt>null</tt> 
 	 * to begin with or it is an empty string after the trimming.
 	 * @param string the string to be copied, can be <tt>null</tt>
-	 * @return the resulting string, can be <tt>null</tt>
+	 * @return the resulting string
 	 */
 	private String copyTrimmed(String string) {
-		String copy = string != null ? string.toLowerCase().trim().replaceAll("\"", "") : null; // might also strip off leading and trailing .:*-; etc.
-		return !"".equals(copy) ? copy : null;
+		return string != null ? string.toLowerCase().trim().replaceAll("\"", "") : "";
 	}
 	
 }

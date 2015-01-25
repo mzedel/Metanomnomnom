@@ -4,27 +4,8 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.util.Date;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.Index;
-import javax.persistence.Table;
-
-@Entity
-@Table(name = "adresses",
-indexes = {@Index(name = "last_name_index",  columnList="LastName", unique = false),
-		@Index(name = "first_name_index",  columnList="FirstName", unique = false),
-		@Index(name = "key_index",  columnList="Key", unique = false)})
 public class Address {
-
-	// do not change the ID
-	@Id
-	@GeneratedValue(strategy=GenerationType.AUTO)
-	private Integer id;
-
-	@Column(name="OrigId", length=20, nullable=true)
+	
 	public Integer origId;
 
 	public String title;

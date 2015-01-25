@@ -24,16 +24,16 @@ import de.hpi.dpdc.dubstep.detection.address.Address;
  * given input and output file.
  */
 public class DubstepConductor {
-	
+
 	/*
 	 * Creation
 	 */
 
 	private Path input;
 	private Path output;
-	
+
 	private DataFactory dataFactory;
-	
+
 	/**
 	 * Private constructor. Usage {@link #forFiles(File, File)} to create a new
 	 * instance.
@@ -44,7 +44,7 @@ public class DubstepConductor {
 		this.input = input;
 		this.output = output;
 	}
-	
+
 	/**
 	 * Create a new instance for the given input and output paths. Both paths
 	 * are validated and the output file is (re-)created. If the files cannot be
@@ -58,14 +58,14 @@ public class DubstepConductor {
 	 */
 	public static DubstepConductor create(Path input, Path output, DataFactory dataFactory) throws IOException {
 		prepareFiles(input.toFile(), output.toFile());
-		
+
 		DubstepConductor conductor = new DubstepConductor(input, output);
-		
+
 		conductor.dataFactory = dataFactory;
-		
+
 		return conductor;
 	}
-	
+
 	/**
 	 * Make sure that the input file exists and can be read. Delete the old
 	 * output file if necessary and create a new one. If something does not work,
@@ -98,11 +98,11 @@ public class DubstepConductor {
 			throw new IllegalArgumentException("Cannot create output file.");
 		}
 	}
-	
+
 	/*
 	 * Execution
 	 */
-	
+
 	/**
 	 * Performs the duplicate detection. Reads the input file and writes results
 	 * to the output file.
@@ -110,47 +110,61 @@ public class DubstepConductor {
 	 */
 	public void execute() throws IOException {
 		long timeNow = System.nanoTime();
-		
+		long timeTotalMillis = 0;
+		long timeDiffMillis = 0;
+
 		// read
 		List<String> raw = this.dataFactory.createReader().read(this.input.toString());
-		System.out.println("Reading: " + ((System.nanoTime() - timeNow) / 1000000) + "ms");
+		timeDiffMillis = (System.nanoTime() - timeNow) / 1000000;
+		timeTotalMillis += timeDiffMillis;
+		System.out.println("Reading: " + timeDiffMillis + "ms");
 		timeNow = System.nanoTime();
-		
+
 		// parse
 		List<String[]> records = this.dataFactory.createParser().parse(raw);
 		raw = null;
-		System.out.println("Parsing: " + ((System.nanoTime() - timeNow) / 1000000) + "ms");
+		timeDiffMillis = (System.nanoTime() - timeNow) / 1000000;
+		timeTotalMillis += timeDiffMillis;
+		System.out.println("Parsing: " + timeDiffMillis + "ms");
 		timeNow = System.nanoTime();
-		
+
 		// convert
 		records = this.dataFactory.createConverter().convert(records);
-		System.out.println("Converting: " + ((System.nanoTime() - timeNow) / 1000000) + "ms");
+		System.out.println("Converting: " + timeDiffMillis + "ms");
 		timeNow = System.nanoTime();
-		
+
 		// split double records
 		records = this.splitRecords(records);
-		System.out.println("Splitting: " + ((System.nanoTime() - timeNow) / 1000000) + "ms");
+		timeDiffMillis = (System.nanoTime() - timeNow) / 1000000;
+		timeTotalMillis += timeDiffMillis;
+		System.out.println("Splitting: " + timeDiffMillis + "ms");
 		timeNow = System.nanoTime();
-		
+
 		// blocking
 		Map<String, List<Address>> blocks = this.createBlocks(records);
 		records = null;
-		System.out.println("Blocking: " + ((System.nanoTime() - timeNow) / 1000000) + "ms");
-		System.out.println("\tnumber of blocks: " + blocks.size());
+		timeDiffMillis = (System.nanoTime() - timeNow) / 1000000;
+		timeTotalMillis += timeDiffMillis;
+		System.out.println("Blocking: " + timeDiffMillis + "ms");
 		timeNow = System.nanoTime();
-		
+
 		// find duplicates
 		Set<Duplicate> duplicates = this.findDuplicates(blocks);
 		blocks = null;
-		System.out.println("Finding: " + ((System.nanoTime() - timeNow) / 1000000) + "ms");
+		timeDiffMillis = (System.nanoTime() - timeNow) / 1000000;
+		timeTotalMillis += timeDiffMillis;
+		System.out.println("Finding: " + timeDiffMillis + "ms");
 		System.out.println("\tnumber of duplicates: " + duplicates.size());
 		timeNow = System.nanoTime();
-		
+
 		// write the duplicates
 		this.writeDuplicates(duplicates);
-		System.out.println("Writing: " + ((System.nanoTime() - timeNow) / 1000000) + "ms");
+		timeDiffMillis = (System.nanoTime() - timeNow) / 1000000;
+		timeTotalMillis += timeDiffMillis;
+		System.out.println("Writing: " + timeDiffMillis + "ms");
+		System.out.println("\nTotal: " + timeTotalMillis + "ms");
 	}
-	
+
 	/**
 	 * Make sure that records which represent two entities are split up.
 	 * @param records the records to be copied or split
@@ -160,9 +174,9 @@ public class DubstepConductor {
 		if (records == null || records.size() == 0) {
 			return new ArrayList<String[]>();
 		}
-		
+
 		List<String[]> result = new ArrayList<String[]>((int) (records.size() * 1.1));
-		
+
 		final int normalLength = records.get(0).length;
 		for (String[] record : records) {
 			if (record.length == normalLength * 2) {
@@ -174,10 +188,10 @@ public class DubstepConductor {
 				result.add(record);
 			}
 		}
-		
+
 		return result;
 	}
-	
+
 	/**
 	 * Create proper {@link Address} objects from raw records, remove objects
 	 * without keys (no postal code or last name), group by key.
@@ -186,7 +200,7 @@ public class DubstepConductor {
 	 */
 	private Map<String, List<Address>> createBlocks(List<String[]> records) {
 		Map<String, List<Address>> blocks = new TreeMap<String, List<Address>>();
-		
+
 		Address address = null;
 		for (String[] record : records) {
 			// create Address object from record
@@ -195,7 +209,7 @@ public class DubstepConductor {
 				// no key (i.e., no postal code or no last name) => skip
 				continue;
 			}
-			
+
 			// add record to map
 			if (!blocks.containsKey(address.key)) {
 				// add new list for key
@@ -203,10 +217,10 @@ public class DubstepConductor {
 			}
 			blocks.get(address.key).add(address);
 		}
-		
+
 		return blocks;
 	}
-	
+
 	/**
 	 * Convenience class for handling duplicates. The first id is always the
 	 * smaller one, and <tt>Duplicate</tt>s are comparable.
@@ -215,7 +229,7 @@ public class DubstepConductor {
 
 		private int id1;
 		private int id2;
-		
+
 		public Duplicate(int idLeft, int idRight) {
 			if (idLeft < idRight) {
 				this.id1 = idLeft;
@@ -228,7 +242,7 @@ public class DubstepConductor {
 				throw new RuntimeException("Tried to create trivial duplicate: " + idLeft);
 			}
 		}
-		
+
 		@Override
 		public int compareTo(Duplicate other) {
 			if (this.id1 < other.id1 || (this.id1 == other.id1 && this.id2 < other.id2)) {
@@ -239,13 +253,13 @@ public class DubstepConductor {
 				return 1;
 			}
 		}
-		
+
 		public String toString() {
 			return this.id1 + "," + this.id2;
 		}
-		
+
 	}
-	
+
 	/**
 	 * Find duplicates.
 	 * @param blocks the blocks of records
@@ -254,8 +268,12 @@ public class DubstepConductor {
 	private Set<Duplicate> findDuplicates(Map<String, List<Address>> blocks) throws IOException {
 		// prepare sorted set of output strings ("id1,id2")
 		SortedSet<Duplicate> duplicates = new TreeSet<Duplicate>();
-		
+
 		// find duplicates
+		System.out.println("\tnumber of blocks: " + blocks.size());
+		long printThreshold = blocks.size() / 10;
+		long blocksDoneTotal = 0;
+		
 		Address address1, address2;
 		for (List<Address> block : blocks.values()) {
 			// compare records within the block
@@ -264,18 +282,27 @@ public class DubstepConductor {
 				address1 = block.get(i);
 				for (int j = i + 1; j < blockSize; j++) {
 					address2 = block.get(j);
-					if (this.isDuplicate(address1, address2)) {
-						// found a duplicate, add it to the collection
-						duplicates.add(new Duplicate(address1.origId, address2.origId));	// ids must not be null
+					if (!address1.origId.equals(address2.origId)) {	// split records have the same ID
+						if (this.isDuplicate(address1, address2)) {
+							// found a duplicate, add it to the collection
+							duplicates.add(new Duplicate(address1.origId, address2.origId));	// ids must not be null
+						}
 					}
 				}
 			}
+			
+			printThreshold--;
+			blocksDoneTotal++;
+			if (printThreshold <= 0) {
+				System.out.println("\t" + blocksDoneTotal + " of " + blocks.size() + " blocks processed");
+				printThreshold = blocks.size() / 10;
+			}
 		}
-		
+
 		// return result
 		return duplicates;
 	}
-	
+
 	/**
 	 * Write the set of duplicates to the output path.
 	 * @param duplicates the duplicates
@@ -289,7 +316,7 @@ public class DubstepConductor {
 		}
 		Files.write(this.output, duplicateStrings, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING);
 	}
-	
+
 	/**
 	 * Decide whether the given objects are duplicates, i.e., represent the same
 	 * real world entity.
@@ -299,122 +326,120 @@ public class DubstepConductor {
 	 * 	<tt>false</tt> otherwise
 	 */
 	private boolean isDuplicate(Address address1, Address address2) {
-	    AbstractStringMetric levenshteinMetric = new Levenshtein();
-            AbstractStringMetric winklerMetric = new JaroWinkler();
-            AbstractStringMetric mongeElkanMetric = new MongeElkan();
-	    // may need some adjustments 
-            // used https://nats-www.informatik.uni-hamburg.de/pub/User/PhD/ElitaGavrilaVertanEditedFinal.pdf´
-            // as a rule of thumb
-            final double LEVENSHTEIN_THRESHOLD = 0.75;
-	    final double WINKLER_YEAR_THRESHOLD = 0.7;
-	    final double MONGE_ELKAN_THRESHOLD = 0.7;
-	    final double WINKLER_TITLE_THRESHOLD = 0.4;
-	    final int STREET_NAME_TOLERANCE = 4; // to allow str / strasse
-	    final int LENGTH_TOLERANCE = 2;
-	    final double BE_STRICTER = 0.1;
+		AbstractStringMetric levenshteinMetric = new Levenshtein();
+		AbstractStringMetric winklerMetric = new JaroWinkler();
+		AbstractStringMetric mongeElkanMetric = new MongeElkan();
+		// may need some adjustments 
+		// used https://nats-www.informatik.uni-hamburg.de/pub/User/PhD/ElitaGavrilaVertanEditedFinal.pdf´
+		// as a rule of thumb
+		final double LEVENSHTEIN_THRESHOLD = 0.75;
+		final double WINKLER_YEAR_THRESHOLD = 0.7;
+		final double MONGE_ELKAN_THRESHOLD = 0.7;
+		final double WINKLER_TITLE_THRESHOLD = 0.4;
+		final int STREET_NAME_TOLERANCE = 4; // to allow str / strasse
+		final int LENGTH_TOLERANCE = 2;
+		final double BE_STRICTER = 0.1;
 
-	    if (((Math.abs(address1.lastName.length() - address2.lastName.length()) <= LENGTH_TOLERANCE)
-          	&& ((levenshteinMetric.getSimilarity(address1.lastName, address2.lastName) > LEVENSHTEIN_THRESHOLD)
-      		  || (mongeElkanMetric.getSimilarity(address1.lastName, address2.lastName) > MONGE_ELKAN_THRESHOLD)))
-      		|| ((address1.lastName.startsWith(address2.firstName.substring(0, 2))
-      			|| address2.lastName.startsWith(address1.firstName.substring(0, 2))))) {
-              if ((Math.abs(address1.firstName.length() - address2.firstName.length()) <= LENGTH_TOLERANCE) || (address1.firstName.startsWith(address2.firstName.substring(0, 2))
-    		  || address2.firstName.startsWith(address1.firstName.substring(0, 2)))) {
-        	  // firstName might fit, city and streetname + birthYear should be enough
-        	  if ((levenshteinMetric.getSimilarity(address1.firstName, address2.firstName) > LEVENSHTEIN_THRESHOLD) 
-        		  || (mongeElkanMetric.getSimilarity(address1.firstName, address2.firstName) > MONGE_ELKAN_THRESHOLD)) {
-        	      // t,fN,lN,bY,sN,c
-        	      // -,x ,x , -, -,-
-                    if ((Math.abs(address1.city.length() - address2.city.length()) <= LENGTH_TOLERANCE)
-                    	&& ((levenshteinMetric.getSimilarity(address1.city, address2.city) > LEVENSHTEIN_THRESHOLD)
-                    		|| (mongeElkanMetric.getSimilarity(address1.city, address2.city) > MONGE_ELKAN_THRESHOLD))) {
-                	// t,fN,lN,bY,sN,c
-                	// -, x, x, -, -,x
-                	if ((Math.abs(address1.streetName.length() - address2.streetName.length()) <= STREET_NAME_TOLERANCE)
-                    		&& ((levenshteinMetric.getSimilarity(address1.streetName, address2.streetName) > LEVENSHTEIN_THRESHOLD)
-                            		|| (mongeElkanMetric.getSimilarity(address1.streetName, address2.streetName) > MONGE_ELKAN_THRESHOLD))) {
-                	    // t,fN,lN,bY,sN,c
-                	    // -,x ,x , -, x,x
-                    	    if (address1.birthYear != null && address2.birthYear != null) {
-                    		// if birthyears exist but are different, these might be father & son
-                    		if (winklerMetric.getSimilarity(address1.birthYear, address2.birthYear) > WINKLER_YEAR_THRESHOLD) {
-                    		    return true;
-                    		} else {
-                    		    return false;
-                    		}
-                    	    }
-                    	    return true;
-                    	}
-                    } else if ((address1.city.isEmpty() || address2.city.isEmpty()) && winklerMetric.getSimilarity(address1.birthYear, address2.birthYear) > WINKLER_YEAR_THRESHOLD) {
-                	// postalcode should be close to equal anyway, birthdates probably close
-                	if ((Math.abs(address1.streetName.length() - address2.streetName.length()) <= STREET_NAME_TOLERANCE)
-                    		&& levenshteinMetric.getSimilarity(address1.streetName, address2.streetName) > LEVENSHTEIN_THRESHOLD) {
-                	    return true;
-                	}
-                    }
-        	  }
-        	  
-              }
-	    }
-	    // lastName failed
-	    else if ((levenshteinMetric.getSimilarity(address1.firstName, address2.firstName) > LEVENSHTEIN_THRESHOLD + BE_STRICTER) 
-  		  || (mongeElkanMetric.getSimilarity(address1.firstName, address2.firstName) > MONGE_ELKAN_THRESHOLD + BE_STRICTER)) {
-  	      // t,fN,lN,bY,sN,c
-  	      // -, X,! , -, -,-
-              if ((Math.abs(address1.city.length() - address2.city.length()) <= LENGTH_TOLERANCE)
-              	&& ((levenshteinMetric.getSimilarity(address1.city, address2.city) > LEVENSHTEIN_THRESHOLD + BE_STRICTER)
-              		|| (mongeElkanMetric.getSimilarity(address1.city, address2.city) > MONGE_ELKAN_THRESHOLD + BE_STRICTER))) {
-          	// t,fN,lN,bY,sN,c
-          	// -, X,! , -, -,X
-          	if ((Math.abs(address1.streetName.length() - address2.streetName.length()) <= STREET_NAME_TOLERANCE)
-              		&& ((levenshteinMetric.getSimilarity(address1.streetName, address2.streetName) > LEVENSHTEIN_THRESHOLD)
-                      		|| (mongeElkanMetric.getSimilarity(address1.streetName, address2.streetName) > MONGE_ELKAN_THRESHOLD))) {
-          	    // t,fN,lN,bY,sN,c
-          	    // -, X,! , -, x,X
-              	    if (address1.birthYear != null && address2.birthYear != null) {
-              		// if birthday is not defined, we may not know, otherwise beStricter!
-              		if (address1.birthYear.equals(address2.birthYear)) {
-              		    return true;
-              		} else {
-              		    return false;
-              		}
-              	    }
-              	    return true;
-              	}
-              } else if ((address1.city.isEmpty() || address2.city.isEmpty()) && winklerMetric.getSimilarity(address1.birthYear, address2.birthYear) > WINKLER_YEAR_THRESHOLD) {
-          	// postalcode should be close to equal anyway, birthdates probably close
-          	if ((Math.abs(address1.streetName.length() - address2.streetName.length()) <= STREET_NAME_TOLERANCE)
-              		&& levenshteinMetric.getSimilarity(address1.streetName, address2.streetName) > LEVENSHTEIN_THRESHOLD) {
-          	    return true;
-          	}
-              }
-	    }
-	    // now pay extra attention to other details - 
-	    // t,fN,lN,bY,sN,c
-	    // -,! ,! , -, -,-
-	    else if (((Math.abs(address1.city.length() - address2.city.length()) <= LENGTH_TOLERANCE)
-	              	&& ((levenshteinMetric.getSimilarity(address1.city, address2.city) > LEVENSHTEIN_THRESHOLD + BE_STRICTER)
-	              		|| (mongeElkanMetric.getSimilarity(address1.city, address2.city) > MONGE_ELKAN_THRESHOLD + BE_STRICTER)))
-	              ||
-	              ((!address1.title.isEmpty() && !address2.title.isEmpty())
-	        	      && (winklerMetric.getSimilarity(address1.title, address2.title) > WINKLER_TITLE_THRESHOLD))) {
-		if (winklerMetric.getSimilarity(address1.houseNumber, address2.houseNumber) > MONGE_ELKAN_THRESHOLD) {
-          	    // t,fN,lN,bY,sN,c
-          	    // y,! ,! , -, -,Y
-              	    if (address1.birthYear != null && address2.birthYear != null) {
-              		if (winklerMetric.getSimilarity(address1.birthYear, address2.birthYear) > WINKLER_YEAR_THRESHOLD) {
-            		    return true;
-              		} else {
-              		    return false;
-              		}
-              	    }
-              	    if (mongeElkanMetric.getSimilarity(address1.streetName, address2.streetName) > WINKLER_YEAR_THRESHOLD) {
-              		return true;
-              	    }
-              	}
-	    }
-	              
-	    return false;
+		if (((Math.abs(address1.lastName.length() - address2.lastName.length()) <= LENGTH_TOLERANCE)
+				&& ((levenshteinMetric.getSimilarity(address1.lastName, address2.lastName) > LEVENSHTEIN_THRESHOLD)
+						|| (mongeElkanMetric.getSimilarity(address1.lastName, address2.lastName) > MONGE_ELKAN_THRESHOLD)))
+						|| (((address2.firstName.length() >= 2 && address1.lastName.startsWith(address2.firstName.substring(0, 2)))
+								|| (address1.firstName.length() >= 2 && address2.lastName.startsWith(address1.firstName.substring(0, 2)))))) {
+			if ((Math.abs(address1.firstName.length() - address2.firstName.length()) <= LENGTH_TOLERANCE) || (address1.firstName.startsWith(address2.firstName.substring(0, Math.min(2, address2.firstName.length())))
+					|| address2.firstName.startsWith(address1.firstName.substring(0, Math.min(2, address1.firstName.length()))))) {
+				// firstName might fit, city and streetname + birthYear should be enough
+				if ((levenshteinMetric.getSimilarity(address1.firstName, address2.firstName) > LEVENSHTEIN_THRESHOLD) 
+						|| (mongeElkanMetric.getSimilarity(address1.firstName, address2.firstName) > MONGE_ELKAN_THRESHOLD)) {
+					// t,fN,lN,bY,sN,c
+					// -,x ,x , -, -,-
+					if ((Math.abs(address1.city.length() - address2.city.length()) <= LENGTH_TOLERANCE)
+							&& ((levenshteinMetric.getSimilarity(address1.city, address2.city) > LEVENSHTEIN_THRESHOLD)
+									|| (mongeElkanMetric.getSimilarity(address1.city, address2.city) > MONGE_ELKAN_THRESHOLD))) {
+						// t,fN,lN,bY,sN,c
+						// -, x, x, -, -,x
+						if ((Math.abs(address1.streetName.length() - address2.streetName.length()) <= STREET_NAME_TOLERANCE)
+								&& ((levenshteinMetric.getSimilarity(address1.streetName, address2.streetName) > LEVENSHTEIN_THRESHOLD)
+										|| (mongeElkanMetric.getSimilarity(address1.streetName, address2.streetName) > MONGE_ELKAN_THRESHOLD))) {
+							// t,fN,lN,bY,sN,c
+							// -,x ,x , -, x,x
+							if (address1.birthYear != null && address2.birthYear != null) {
+								// if birthyears exist but are different, these might be father & son
+								if (winklerMetric.getSimilarity(address1.birthYear, address2.birthYear) > WINKLER_YEAR_THRESHOLD) {
+									return true;
+								} else {
+									return false;
+								}
+							}
+							return true;
+						}
+					} else if ((address1.city.isEmpty() || address2.city.isEmpty()) && winklerMetric.getSimilarity(address1.birthYear, address2.birthYear) > WINKLER_YEAR_THRESHOLD) {
+						// postalcode should be close to equal anyway, birthdates probably close
+						if ((Math.abs(address1.streetName.length() - address2.streetName.length()) <= STREET_NAME_TOLERANCE)
+								&& levenshteinMetric.getSimilarity(address1.streetName, address2.streetName) > LEVENSHTEIN_THRESHOLD) {
+							return true;
+						}
+					}
+				}
+
+			}
+		} else if ((levenshteinMetric.getSimilarity(address1.firstName, address2.firstName) > LEVENSHTEIN_THRESHOLD + BE_STRICTER) 
+				|| (mongeElkanMetric.getSimilarity(address1.firstName, address2.firstName) > MONGE_ELKAN_THRESHOLD + BE_STRICTER)) {
+			// lastName failed
+			
+			// t,fN,lN,bY,sN,c
+			// -, X,! , -, -,-
+			if ((Math.abs(address1.city.length() - address2.city.length()) <= LENGTH_TOLERANCE)
+					&& ((levenshteinMetric.getSimilarity(address1.city, address2.city) > LEVENSHTEIN_THRESHOLD + BE_STRICTER)
+							|| (mongeElkanMetric.getSimilarity(address1.city, address2.city) > MONGE_ELKAN_THRESHOLD + BE_STRICTER))) {
+				// t,fN,lN,bY,sN,c
+				// -, X,! , -, -,X
+				if ((Math.abs(address1.streetName.length() - address2.streetName.length()) <= STREET_NAME_TOLERANCE)
+						&& ((levenshteinMetric.getSimilarity(address1.streetName, address2.streetName) > LEVENSHTEIN_THRESHOLD)
+								|| (mongeElkanMetric.getSimilarity(address1.streetName, address2.streetName) > MONGE_ELKAN_THRESHOLD))) {
+					// t,fN,lN,bY,sN,c
+					// -, X,! , -, x,X
+					if (!address1.birthYear.isEmpty() && !address2.birthYear.isEmpty()) {
+						// if birthday is not defined, we may not know, otherwise beStricter!
+						if (address1.birthYear.equals(address2.birthYear)) {
+							return true;
+						} else {
+							return false;
+						}
+					}
+					return true;
+				}
+			} else if ((address1.city.isEmpty() || address2.city.isEmpty()) && winklerMetric.getSimilarity(address1.birthYear, address2.birthYear) > WINKLER_YEAR_THRESHOLD) {
+				// postalcode should be close to equal anyway, birthdates probably close
+				if ((Math.abs(address1.streetName.length() - address2.streetName.length()) <= STREET_NAME_TOLERANCE)
+						&& levenshteinMetric.getSimilarity(address1.streetName, address2.streetName) > LEVENSHTEIN_THRESHOLD) {
+					return true;
+				}
+			}
+		} else if (((Math.abs(address1.city.length() - address2.city.length()) <= LENGTH_TOLERANCE)
+				&& ((levenshteinMetric.getSimilarity(address1.city, address2.city) > LEVENSHTEIN_THRESHOLD + BE_STRICTER)
+						|| (mongeElkanMetric.getSimilarity(address1.city, address2.city) > MONGE_ELKAN_THRESHOLD + BE_STRICTER)))
+						|| ((!address1.title.isEmpty() && !address2.title.isEmpty())
+								&& (winklerMetric.getSimilarity(address1.title, address2.title) > WINKLER_TITLE_THRESHOLD))) {
+			// now pay extra attention to other details - 
+			// t,fN,lN,bY,sN,c
+			// -,! ,! , -, -,-
+			if (winklerMetric.getSimilarity(address1.houseNumber, address2.houseNumber) > MONGE_ELKAN_THRESHOLD) {
+				// t,fN,lN,bY,sN,c
+				// y,! ,! , -, -,Y
+				if (!address1.birthYear.isEmpty() && !address2.birthYear.isEmpty()) {
+					if (winklerMetric.getSimilarity(address1.birthYear, address2.birthYear) > WINKLER_YEAR_THRESHOLD) {
+						return true;
+					} else {
+						return false;
+					}
+				}
+				if (mongeElkanMetric.getSimilarity(address1.streetName, address2.streetName) > WINKLER_YEAR_THRESHOLD) {
+					return true;
+				}
+			}
+		}
+
+		return false;
 	}
-	
+
 }
