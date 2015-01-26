@@ -286,10 +286,10 @@ public class DubstepConductor {
 						if (this.isDuplicate(address1, address2)) {
 							// found a duplicate, add it to the collection
 							duplicates.add(new Duplicate(address1.origId, address2.origId));	// ids must not be null
-//							System.out.println(address1);
-//							System.out.println("-----------------");
-//							System.out.println(address2);
-//							System.out.println("=================");
+							System.out.println(address1);
+							System.out.println("-----------------");
+							System.out.println(address2);
+							System.out.println("=================");
 						}
 					}
 				}
@@ -336,7 +336,7 @@ public class DubstepConductor {
 		// may need some adjustments 
 		// used https://nats-www.informatik.uni-hamburg.de/pub/User/PhD/ElitaGavrilaVertanEditedFinal.pdf´
 		// as a rule of thumb
-		final double LEVENSHTEIN_THRESHOLD = 0.65;
+		final double LEVENSHTEIN_THRESHOLD = 0.7;
 		final double WINKLER_YEAR_THRESHOLD = 0.7;
 		final double MONGE_ELKAN_THRESHOLD = 0.6;
 		final double WINKLER_TITLE_THRESHOLD = 0.4;
