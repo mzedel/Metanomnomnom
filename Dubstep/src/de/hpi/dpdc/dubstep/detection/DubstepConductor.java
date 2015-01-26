@@ -286,6 +286,10 @@ public class DubstepConductor {
 						if (this.isDuplicate(address1, address2)) {
 							// found a duplicate, add it to the collection
 							duplicates.add(new Duplicate(address1.origId, address2.origId));	// ids must not be null
+//							System.out.println(address1);
+//							System.out.println("-----------------");
+//							System.out.println(address2);
+//							System.out.println("=================");
 						}
 					}
 				}
@@ -332,19 +336,19 @@ public class DubstepConductor {
 		// may need some adjustments 
 		// used https://nats-www.informatik.uni-hamburg.de/pub/User/PhD/ElitaGavrilaVertanEditedFinal.pdf´
 		// as a rule of thumb
-		final double LEVENSHTEIN_THRESHOLD = 0.75;
+		final double LEVENSHTEIN_THRESHOLD = 0.65;
 		final double WINKLER_YEAR_THRESHOLD = 0.7;
-		final double MONGE_ELKAN_THRESHOLD = 0.7;
+		final double MONGE_ELKAN_THRESHOLD = 0.6;
 		final double WINKLER_TITLE_THRESHOLD = 0.4;
-		final int STREET_NAME_TOLERANCE = 4; // to allow str / strasse
-		final int LENGTH_TOLERANCE = 2;
+		final int STREET_NAME_TOLERANCE = 6; // to allow str / strasse
+		final int LENGTH_TOLERANCE = 3;
 		final double BE_STRICTER = 0.1;
 
 		if (((Math.abs(address1.lastName.length() - address2.lastName.length()) <= LENGTH_TOLERANCE)
 				&& ((levenshteinMetric.getSimilarity(address1.lastName, address2.lastName) > LEVENSHTEIN_THRESHOLD)
 						|| (mongeElkanMetric.getSimilarity(address1.lastName, address2.lastName) > MONGE_ELKAN_THRESHOLD)))
-						|| (((address2.firstName.length() >= 2 && address1.lastName.startsWith(address2.firstName.substring(0, 2)))
-								|| (address1.firstName.length() >= 2 && address2.lastName.startsWith(address1.firstName.substring(0, 2)))))) {
+						|| (((address2.firstName.length() >= 2 && address1.firstName.startsWith(address2.firstName.substring(0, 2)))
+								|| (address1.firstName.length() >= 2 && address2.firstName.startsWith(address1.firstName.substring(0, 2)))))) {
 			if ((Math.abs(address1.firstName.length() - address2.firstName.length()) <= LENGTH_TOLERANCE) || (address1.firstName.startsWith(address2.firstName.substring(0, Math.min(2, address2.firstName.length())))
 					|| address2.firstName.startsWith(address1.firstName.substring(0, Math.min(2, address1.firstName.length()))))) {
 				// firstName might fit, city and streetname + birthYear should be enough
@@ -415,11 +419,14 @@ public class DubstepConductor {
 					return true;
 				}
 			}
-		} else if (((Math.abs(address1.city.length() - address2.city.length()) <= LENGTH_TOLERANCE)
-				&& ((levenshteinMetric.getSimilarity(address1.city, address2.city) > LEVENSHTEIN_THRESHOLD + BE_STRICTER)
-						|| (mongeElkanMetric.getSimilarity(address1.city, address2.city) > MONGE_ELKAN_THRESHOLD + BE_STRICTER)))
-						|| ((!address1.title.isEmpty() && !address2.title.isEmpty())
-								&& (winklerMetric.getSimilarity(address1.title, address2.title) > WINKLER_TITLE_THRESHOLD))) {
+		} else if ((mongeElkanMetric.getSimilarity(address1.lastName, address2.lastName) > 0.8) 
+				&&
+				(((Math.abs(address1.city.length() - address2.city.length()) <= LENGTH_TOLERANCE)
+        				&& ((levenshteinMetric.getSimilarity(address1.city, address2.city) > LEVENSHTEIN_THRESHOLD + BE_STRICTER)
+        					|| (mongeElkanMetric.getSimilarity(address1.city, address2.city) > MONGE_ELKAN_THRESHOLD + BE_STRICTER)))
+        			|| 
+        			((!address1.title.isEmpty() && !address2.title.isEmpty())
+        				&& (winklerMetric.getSimilarity(address1.title, address2.title) > WINKLER_TITLE_THRESHOLD)))) {
 			// now pay extra attention to other details - 
 			// t,fN,lN,bY,sN,c
 			// -,! ,! , -, -,-

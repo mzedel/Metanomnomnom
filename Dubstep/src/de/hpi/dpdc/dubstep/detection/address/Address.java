@@ -64,7 +64,28 @@ public class Address {
 		if (this.postalCode != null && this.lastName != null) {
 			this.key = this.postalCode.substring(0, Math.min(this.postalCode.length(), 3))
 					+ ":"
-					+ this.lastName.substring(0, Math.min(this.lastName.length(), 2));
+					+ this.lastName.substring(0, Math.min(this.lastName.length(), 3));
 		} // else: key remains null
+	}
+	
+	private final String seperator = "|";
+	public String toString() {
+	    StringBuilder sb = new StringBuilder();
+	    sb.append(this.origId);
+	    sb.append(seperator);
+	    sb.append(this.title);
+	    sb.append(seperator);
+	    sb.append(this.firstName);
+	    sb.append(seperator);
+	    sb.append(this.lastName);
+	    sb.append(seperator);
+	    sb.append(this.city);
+	    sb.append(seperator);
+	    sb.append(this.houseNumber);
+	    sb.append(seperator);
+	    sb.append(this.birthYear);
+	    sb.append(seperator);
+	    sb.append(this.postalCode);
+	    return sb.toString();
 	}
 }
